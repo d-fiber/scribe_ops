@@ -1,0 +1,12 @@
+name: "{{app_name_snake}}"
+
+services:
+  db:
+    cpu_shares: 4096
+    deploy:
+      resources:
+        limits:
+          memory: "{{db_mem_limit}}"{{db_cpu_ceiling}}
+          pids: 512
+        reservations:
+          memory: "{{db_mem_res}}"

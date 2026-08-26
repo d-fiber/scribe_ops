@@ -1,0 +1,12 @@
+name: "{{app_name_snake}}"
+
+services:
+  rest:
+    cpu_shares: {{rest_cpu_shares}}
+    deploy:
+      resources:
+        limits:
+          memory: "{{rest_mem_limit}}"{{rest_cpu_ceiling}}
+          pids: 512
+        reservations:
+          memory: "{{rest_mem_res}}"

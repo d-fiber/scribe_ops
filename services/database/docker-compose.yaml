@@ -1,0 +1,76 @@
+name: "{{app_name_snake}}"
+
+services:
+  db:
+    container_name: "db"
+    build:
+      context: "{{sdk_root}}"
+      dockerfile: "Dockerfile"
+    restart: "unless-stopped"
+    volumes:
+      - "{{service_database}}/roles.sql:/docker-entrypoint-initdb.d/init-scripts/98-roles.sql:Z"
+      - "{{sdk_root}}/packages/foundation/db/init:/docker-entrypoint-init-sql/foundation:ro"
+      - "${PROJECT_DB_INIT:-./lib/db/init}:/docker-entrypoint-init-sql/project:ro"
+      - "{{service_database}}/run-init-scripts.sh:/docker-entrypoint-initdb.d/zz-run-init-scripts.sh:Z"
+      - "{{sdk_root}}/postgres:/var/lib/postgresql/data:Z"
+      - "db-config:/etc/postgresql-custom"
+    environment:
+      POSTGRES_HOST: "/var/run/postgresql"
+      SMTP_ENCRYPTION_KEY: "${SMTP_ENCRYPTION_KEY}"
+      API_INTERNAL_URL: "${API_INTERNAL_URL:-http://api:3000}"
+      FUNCTIONS_INTERNAL_URL: "${FUNCTIONS_INTERNAL_URL:-http://functions:9000}"
+      PGBACKREST_STANZA: "{{app_name_snake}}"
+      PGBACKREST_PG1_PATH: "/var/lib/postgresql/data"
+      PGBACKREST_REPO1_TYPE: "${PGBACKREST_REPO_TYPE:-none}"
+      PGBACKREST_REPO1_PATH: "/pgbackrest"
+      PGBACKREST_REPO1_S3_BUCKET: "${PGBACKREST_BUCKET:-}"
+      PGBACKREST_REPO1_S3_ENDPOINT: "${PGBACKREST_ENDPOINT:-}"
+      PGBACKREST_REPO1_S3_REGION: "${PGBACKREST_REGION:-}"
+      PGBACKREST_REPO1_S3_KEY: "${PGBACKREST_KEY:-}"
+      PGBACKREST_REPO1_S3_KEY_SECRET: "${PGBACKREST_KEY_SECRET:-}"
+      PGBACKREST_REPO1_S3_URI_STYLE: "path"
+      PGBACKREST_REPO1_RETENTION_FULL: "2"
+      PGBACKREST_COMPRESS_TYPE: "zst"
+      PGBACKREST_COMPRESS_LEVEL: "3"
+      PGBACKREST_PROCESS_MAX: "4"
+      PGBACKREST_ARCHIVE_ASYNC: "y"
+      PGBACKREST_SPOOL_PATH: "/var/spool/pgbackrest"
+      PGBACKREST_LOG_PATH: "/var/log/pgbackrest"
+      PGBACKREST_START_FAST: "y"
+      PGBACKREST_DELTA: "y"
+      PGPORT: "5432"
+      POSTGRES_PORT: "5432"
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      PGDATABASE: "postgres"
+      POSTGRES_DB: "postgres"
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXP: "3600"
+      INTERNAL_SECRET: ${INTERNAL_SECRET}
+    command:
+      [
+        "postgres",
+        "-c",
+        "config_file=/etc/postgresql/postgresql.conf",
+        "-c",
+        "log_min_messages=fatal",
+        "-c",
+        "max_connections=300",
+        "-c",
+        "shared_buffers=4GB",
+        "-c",
+        "effective_cache_size=12GB",
+      ]
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres", "-h", "localhost"]
+      interval: "5s"
+      timeout: "5s"
+      retries: 10
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  db-config: null

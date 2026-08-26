@@ -1,0 +1,7 @@
+services:
+- name: caddy
+  weight: 93
+  runtime: plain
+  min: 32Mi
+  dev: 64Mi
+  cpu_shares: 2048

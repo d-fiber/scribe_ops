@@ -1,0 +1,10 @@
+services:
+  nats:
+    cpu_shares: 1024
+    deploy:
+      resources:
+        limits:
+          memory: "{{nats_mem_limit}}"{{nats_cpu_ceiling}}
+          pids: 512
+        reservations:
+          memory: "{{nats_mem_res}}"

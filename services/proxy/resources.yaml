@@ -1,0 +1,12 @@
+name: "{{app_name_snake}}"
+
+services:
+  caddy:
+    cpu_shares: 2048
+    deploy:
+      resources:
+        limits:
+          memory: "{{caddy_mem_limit}}"{{caddy_cpu_ceiling}}
+          pids: 512
+        reservations:
+          memory: "{{caddy_mem_res}}"

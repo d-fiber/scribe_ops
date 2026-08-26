@@ -1,0 +1,8 @@
+services:
+- name: functions
+  weight: 661
+  runtime: deno
+  min: 128Mi
+  dev: 256Mi
+  cpu_shares: 1024
+  profile: functions

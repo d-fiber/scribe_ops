@@ -1,0 +1,12 @@
+name: "{{app_name_snake}}"
+
+services:
+  kong:
+    cpu_shares: 2048
+    deploy:
+      resources:
+        limits:
+          memory: "{{kong_mem_limit}}"{{kong_cpu_ceiling}}
+          pids: 512
+        reservations:
+          memory: "{{kong_mem_res}}"

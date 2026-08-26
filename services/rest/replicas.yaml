@@ -1,0 +1,6 @@
+name: "{{app_name_snake}}"
+
+services:
+  rest:
+    deploy:
+      replicas: {{rest_replicas}}

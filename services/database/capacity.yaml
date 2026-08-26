@@ -1,0 +1,7 @@
+services:
+- name: db
+  weight: 2122
+  runtime: postgres
+  min: 256Mi
+  dev: 1Gi
+  cpu_shares: 4096

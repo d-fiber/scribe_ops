@@ -52,7 +52,7 @@ OUT=$OPS/.rendered
 
 say "laying the templates into the CLI, adding the suffix back"
 rm -rf "$TOOLS/templates/ops"
-for file in $(cd "$OPS" && find db docker gateway proxy -type f | sort); do
+for file in $(cd "$OPS" && find services env stack.yaml -type f | sort); do
   mkdir -p "$TOOLS/templates/ops/$(dirname "$file")"
   cp "$OPS/$file" "$TOOLS/templates/ops/$file.tmpl"
 done
@@ -90,7 +90,7 @@ for fixture in $(cd "$OPS/fixtures" && ls); do
     fail "$fixture: docker compose refuses the rendered stack."
 
   say "$fixture: the gateway is a document Kong reads"
-  python3 - "$stack/gateway/kong.yml" <<'PY'
+  python3 - "$stack/services/gateway/kong.yml" <<'PY'
 import sys, yaml
 document = yaml.safe_load(open(sys.argv[1]).read())
 for key in ("_format_version", "services", "consumers", "acls", "upstreams"):
@@ -100,14 +100,32 @@ assert len(paths) == len(set(paths)), f"two routes answer the same path: {paths}
 PY
 
   say "$fixture: the proxy is a Caddyfile Caddy adapts"
-  docker run --rm -e API_DOMAIN=https://fixture.example.com -v "$stack/proxy/Caddyfile:/f:ro" caddy:2 \
+  docker run --rm -e API_DOMAIN=https://fixture.example.com -v "$stack/services/proxy/Caddyfile:/f:ro" caddy:2 \
     caddy validate --config /f --adapter caddyfile >/dev/null 2>&1 ||
     fail "$fixture: caddy refuses the rendered Caddyfile."
 
-  if ! docker run --rm -v "$stack/proxy/Caddyfile:/f:ro" caddy:2 caddy fmt --diff /f >/dev/null 2>&1; then
-    docker run --rm -v "$stack/proxy/Caddyfile:/f:ro" caddy:2 caddy fmt --diff /f 2>/dev/null | grep -E '^[-+]'
+  if ! docker run --rm -v "$stack/services/proxy/Caddyfile:/f:ro" caddy:2 caddy fmt --diff /f >/dev/null 2>&1; then
+    docker run --rm -v "$stack/services/proxy/Caddyfile:/f:ro" caddy:2 caddy fmt --diff /f 2>/dev/null | grep -E '^[-+]'
     fail "$fixture: the rendered Caddyfile is not what caddy fmt writes."
   fi
+
+  say "$fixture: every environment file a service reads was written"
+  for audience in $(cd "$OPS/env" && ls); do
+    [ -f "$stack/env/$audience" ] || fail "$fixture: $audience was not written."
+  done
+  python3 - "$stack" <<'PY'
+import pathlib, sys, yaml
+stack = pathlib.Path(sys.argv[1])
+written = {p.name for p in (stack / "env").iterdir()}
+document = yaml.safe_load((stack / "docker-compose.yaml").read_text())
+missing = {}
+for name, service in document["services"].items():
+    for entry in service.get("env_file", []):
+        audience = pathlib.Path(entry["path"]).name
+        if entry.get("required", True) and audience not in written:
+            missing.setdefault(audience, []).append(name)
+assert not missing, f"required but never written: {missing}"
+PY
 
   say "$fixture: nothing was left unrendered"
   if grep -rlq '{{' "$stack"; then
@@ -118,7 +136,7 @@ done
 
 say "the entrypoint is a script shellcheck accepts"
 if command -v shellcheck >/dev/null; then
-  shellcheck "$OPS/gateway/kong-entrypoint.sh" || fail "shellcheck refuses the gateway entrypoint."
+  shellcheck "$OPS/services/gateway/kong-entrypoint.sh" || fail "shellcheck refuses the gateway entrypoint."
 else
   say "shellcheck is not installed, skipping it"
 fi

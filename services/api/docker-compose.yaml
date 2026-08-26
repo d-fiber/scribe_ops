@@ -1,0 +1,62 @@
+name: "{{app_name_snake}}"
+
+services:
+  api:
+    build:
+      context: "{{service_api}}"
+      dockerfile: "Dockerfile"
+    restart: "unless-stopped"
+    volumes:
+      - "{{sdk_root}}:/app/scribe:ro"
+      - "./{{alchemy_dir}}/sdk/js:/app/{{alchemy_dir}}/sdk/js:ro"
+      - "./lib:/app/lib:ro"
+      - "deno-cache:/deno-dir"
+    environment:
+      PORT: "3000"
+      APP_NAME: "{{app_name}}"
+      API_MAX_INFLIGHT_BODY_MB: "{{api_max_inflight_body}}"
+      WORKER_ENDPOINT: "{{worker_endpoint}}"
+      WORKER_CALLBACK_PORT: "4747"
+    env_file:
+      - path: "{{stack_env}}/host.env"
+        required: true
+      - path: "{{stack_env}}/datastores.env"
+        required: true
+      - path: "{{stack_env}}/packages.env"
+        required: true
+      - path: "{{stack_env}}/project.env"
+        required: false
+    command:
+      - "run"
+      - "--v8-flags=--max-old-space-size={{api_max_old_space}}"
+      - "--allow-net"
+      - "--allow-env"
+      - "--allow-read"
+      - "--allow-sys=osRelease,osUptime,hostname"
+      - "--allow-run=ffmpeg"
+      - "--allow-write=/tmp"
+      - "--config"
+      - "/app/{{alchemy_dir}}/sdk/js/scribe.container.json"
+      - "/app/scribe/engine/shell/platform/server/main.ts"
+    depends_on:
+      db:
+        condition: "service_healthy"
+      kong:
+        condition: "service_healthy"
+      redis:
+        condition: "service_healthy"
+      nats:
+        condition: "service_healthy"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/_health || exit 1"]
+      interval: "10s"
+      timeout: "5s"
+      retries: 10
+      start_period: "60s"
+    stop_grace_period: "30s"
+    init: true
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

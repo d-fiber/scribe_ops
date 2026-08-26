@@ -1,0 +1,6 @@
+services:
+- name: db-migrate
+  weight: 37
+  runtime: oneshot
+  min: 32Mi
+  dev: 32Mi

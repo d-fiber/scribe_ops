@@ -1,0 +1,10 @@
+services:
+  redis:
+    cpu_shares: 2048
+    deploy:
+      resources:
+        limits:
+          memory: "{{redis_mem_limit}}"{{redis_cpu_ceiling}}
+          pids: 512
+        reservations:
+          memory: "{{redis_mem_res}}"

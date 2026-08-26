@@ -1,0 +1,50 @@
+name: "{{app_name_snake}}"
+
+services:
+  kong:
+    image: "kong/kong:3.9.1"
+    restart: "unless-stopped"
+    volumes:
+      - "{{service_gateway}}/kong.yml:/home/kong/temp.yml:ro,z"
+      - "{{service_gateway}}/kong-entrypoint.sh:/home/kong/kong-entrypoint.sh:ro,z"
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: "/usr/local/kong/kong.yml"
+      KONG_PORT_MAPS: "443:8000"
+      KONG_REAL_IP_HEADER: "X-Real-IP"
+      KONG_TRUSTED_IPS: "172.16.0.0/12,192.168.0.0/16,10.0.0.0/8"
+      KONG_DNS_ORDER: "LAST,A,CNAME"
+      KONG_DNS_NOT_FOUND_TTL: "1"
+      KONG_PLUGINS: "request-transformer,cors,key-auth,acl,request-termination,ip-restriction,rate-limiting,request-size-limiting,post-function,pre-function"
+      KONG_NGINX_PROXY_PROXY_BUFFER_SIZE: "160k"
+      KONG_NGINX_PROXY_PROXY_BUFFERS: "64 160k"
+      KONG_PROXY_ACCESS_LOG: "off"
+      KONG_NGINX_HTTP_KEEPALIVE_TIMEOUT: "15s"
+      KONG_NGINX_HTTP_KEEPALIVE_REQUESTS: "1000"
+      KONG_NGINX_HTTP_CLIENT_HEADER_TIMEOUT: "10s"
+      KONG_NGINX_HTTP_CLIENT_BODY_TIMEOUT: "10s"
+      KONG_NGINX_HTTP_SEND_TIMEOUT: "10s"
+      KONG_NGINX_WORKER_PROCESSES: "auto"
+      KONG_NGINX_WORKER_CONNECTIONS: "8192"
+      KONG_UPSTREAM_KEEPALIVE_IDLE_TIMEOUT: "60"
+      KONG_UPSTREAM_KEEPALIVE_MAX_REQUESTS: "1000"
+      KONG_UPSTREAM_KEEPALIVE_POOL_SIZE: "512"
+    env_file:
+      - path: "{{stack_env}}/gateway.env"
+        required: true
+
+    entrypoint: ["bash", "/home/kong/kong-entrypoint.sh"]
+    healthcheck:
+      test: ["CMD", "kong", "health"]
+      interval: "5s"
+      timeout: "5s"
+      retries: 5
+    networks:
+      default:
+        aliases:
+          - api-gw
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

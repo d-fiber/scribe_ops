@@ -1,0 +1,8 @@
+services:
+- name: worker
+  weight: 661
+  runtime: deno
+  profile: worker
+  min: 128Mi
+  dev: 256Mi
+  cpu_shares: 1024

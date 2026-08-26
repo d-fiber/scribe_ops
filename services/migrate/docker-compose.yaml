@@ -1,0 +1,21 @@
+name: "{{app_name_snake}}"
+
+services:
+  db-migrate:
+    container_name: "db-migrate"
+    image: "ghcr.io/amacneil/dbmate:2"
+    restart: "no"
+    environment:
+      DATABASE_URL: "postgres://postgres:${POSTGRES_PASSWORD}@db:5432/postgres?sslmode=disable"
+    volumes:
+      - "${PROJECT_DB_MIGRATIONS:-./lib/db/migrations}:/db/migrations/project:ro"
+      - "{{service_migrate}}/run-migrations.sh:/run-migrations.sh:ro"
+    entrypoint: ["/bin/sh", "/run-migrations.sh"]
+    depends_on:
+      db:
+        condition: service_healthy
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "1"

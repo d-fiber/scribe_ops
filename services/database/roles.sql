@@ -34,9 +34,9 @@
 -- This header is a summary written for convenience. Where it differs from the
 -- LICENSE file, the LICENSE file governs.
 
-\getenv pgpass POSTGRES_PASSWORD
 
-ALTER USER authenticator            WITH PASSWORD :'pgpass';
-ALTER USER pgbouncer                WITH PASSWORD :'pgpass';
-ALTER USER supabase_auth_admin      WITH PASSWORD :'pgpass';
-ALTER USER supabase_storage_admin   WITH PASSWORD :'pgpass';
+\getenv authenticator AUTHENTICATOR_PASSWORD
+\getenv pgbouncer PGBOUNCER_PASSWORD
+
+ALTER USER authenticator WITH PASSWORD :'authenticator';
+ALTER USER pgbouncer     WITH PASSWORD :'pgbouncer';

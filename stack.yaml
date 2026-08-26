@@ -1,0 +1,4 @@
+name: "{{app_name_snake}}"
+
+volumes:
+  deno-cache: null

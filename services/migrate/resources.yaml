@@ -1,0 +1,9 @@
+name: "{{app_name_snake}}"
+
+services:
+  db-migrate:
+    deploy:
+      resources:
+        limits:
+          memory: "{{db_migrate_mem_limit}}"{{db_migrate_cpu_ceiling}}
+          pids: 512

@@ -1,0 +1,7 @@
+services:
+- name: kong
+  weight: 489
+  runtime: nginx
+  min: 128Mi
+  dev: 256Mi
+  cpu_shares: 2048

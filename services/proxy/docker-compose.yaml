@@ -1,0 +1,35 @@
+name: "{{app_name_snake}}"
+
+services:
+  caddy:
+    image: "caddy:2"
+    restart: "unless-stopped"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - "{{service_proxy}}/Caddyfile:/etc/caddy/Caddyfile:ro,z"
+      - "caddy_data:/data"
+      - "caddy_config:/config"
+      - "{{sdk_root}}/web:/srv/web:ro"
+    env_file:
+      - path: "{{stack_env}}/proxy.env"
+        required: true
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:2019/config/"]
+      interval: "10s"
+      timeout: "5s"
+      retries: 5
+    depends_on:
+      kong:
+        condition: "service_healthy"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  caddy_data: null
+  caddy_config: null
