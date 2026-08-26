@@ -4,6 +4,12 @@ services:
   kong:
     image: "kong/kong:3.9.1"
     restart: "unless-stopped"
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: ["ALL"]
+    ulimits:
+      nofile:
+        soft: 8192
+        hard: 16384
     volumes:
       - "{{service_gateway}}/kong.yml:/home/kong/temp.yml:ro,z"
       - "{{service_gateway}}/kong-entrypoint.sh:/home/kong/kong-entrypoint.sh:ro,z"

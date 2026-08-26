@@ -2,7 +2,14 @@ name: "{{app_name_snake}}"
 
 services:
   caddy:
-    image: "caddy:2"
+    image: "caddy:2.11.4"
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: ["ALL"]
+    ulimits:
+      nofile:
+        soft: 8192
+        hard: 16384
+    cap_add: ["NET_BIND_SERVICE"]
     restart: "unless-stopped"
     ports:
       - "80:80"

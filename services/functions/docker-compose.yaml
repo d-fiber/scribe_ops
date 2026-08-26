@@ -7,6 +7,12 @@ services:
       context: "{{service_functions}}"
       dockerfile: "Dockerfile"
     restart: "unless-stopped"
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: ["ALL"]
+    ulimits:
+      nofile:
+        soft: 8192
+        hard: 16384
     volumes:
       - "{{sdk_root}}/engine:/home/deno/functions:ro"
       - "./{{alchemy_dir}}/sdk/js:/home/deno/{{alchemy_dir}}/sdk/js:ro"

@@ -6,6 +6,13 @@ services:
       context: "{{service_api}}"
       dockerfile: "Dockerfile"
     restart: "unless-stopped"
+    user: "deno"
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: ["ALL"]
+    ulimits:
+      nofile:
+        soft: 8192
+        hard: 16384
     volumes:
       - "{{sdk_root}}:/app/scribe:ro"
       - "./{{alchemy_dir}}/sdk/js:/app/{{alchemy_dir}}/sdk/js:ro"
