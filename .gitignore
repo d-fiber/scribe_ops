@@ -2,3 +2,4 @@
 /.env
 
 /.rendered/
+/.e2e/
