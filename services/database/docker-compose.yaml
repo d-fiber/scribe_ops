@@ -2,7 +2,6 @@ name: "{{app_name_snake}}"
 
 services:
   db:
-    container_name: "db"
     build:
       context: "{{service_database}}"
       dockerfile: "Dockerfile"

@@ -1,6 +1,5 @@
 services:
   nats:
-    container_name: "nats"
     image: "nats:2.14-alpine"
     restart: "unless-stopped"
     volumes:

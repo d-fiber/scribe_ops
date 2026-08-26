@@ -1,6 +1,5 @@
 services:
   redis:
-    container_name: "redis"
     image: "valkey/valkey:8.1-alpine"
     restart: "unless-stopped"
     volumes:

@@ -2,7 +2,6 @@ name: "{{app_name_snake}}"
 
 services:
   db-migrate:
-    container_name: "db-migrate"
     image: "ghcr.io/amacneil/dbmate:2"
     restart: "no"
     environment:
