@@ -71,8 +71,16 @@ for fixture in $(cd "$OPS/fixtures" && ls); do
   cp -R "$OPS/fixtures/$fixture" "$work"
   ln -sfn "$FRAMEWORK" "$work/scribe"
 
-  stack=$( cd "$work" && SCRIBE_STACK_HOME="$OUT/cache" "$TOOLS/out/scribe" run --dry-run | awk '/^Assembled /{ print $NF }' )
-  [ -n "$stack" ] || fail "$fixture: the CLI wrote no stack."
+  if ! ( cd "$work" && SCRIBE_STACK_HOME="$OUT/cache" "$TOOLS/out/scribe" run --dry-run ) > "$OUT/$fixture.log" 2>&1; then
+    cat "$OUT/$fixture.log"
+    fail "$fixture: the CLI refused to render."
+  fi
+
+  stack=$(awk '/^Assembled /{ print $NF }' "$OUT/$fixture.log")
+  if [ -z "$stack" ]; then
+    cat "$OUT/$fixture.log"
+    fail "$fixture: the CLI wrote no stack."
+  fi
 
   say "$fixture: the compose holds together"
   compose_files=""
