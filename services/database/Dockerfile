@@ -16,4 +16,3 @@ RUN set -eux; \
 RUN mkdir -p /var/log/pgbackrest /var/spool/pgbackrest \
     && chown -R postgres:postgres /var/log/pgbackrest /var/spool/pgbackrest
 
-USER postgres

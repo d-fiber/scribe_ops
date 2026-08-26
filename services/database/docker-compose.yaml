@@ -11,13 +11,12 @@ services:
       - "{{sdk_root}}/packages/foundation/db/init:/docker-entrypoint-init-sql/foundation:ro"
       - "${PROJECT_DB_INIT:-./lib/db/init}:/docker-entrypoint-init-sql/project:ro"
       - "{{service_database}}/run-init-scripts.sh:/docker-entrypoint-initdb.d/zz-run-init-scripts.sh:Z"
-      - "{{sdk_root}}/postgres:/var/lib/postgresql/data:Z"
+      - "db-data:/var/lib/postgresql/data"
       - "db-config:/etc/postgresql-custom"
     environment:
       POSTGRES_HOST: "/var/run/postgresql"
-      SMTP_ENCRYPTION_KEY: "${SMTP_ENCRYPTION_KEY}"
-      API_INTERNAL_URL: "${API_INTERNAL_URL:-http://api:3000}"
-      FUNCTIONS_INTERNAL_URL: "${FUNCTIONS_INTERNAL_URL:-http://functions:9000}"
+      AUTHENTICATOR_PASSWORD: "${AUTHENTICATOR_PASSWORD}"
+      PGBOUNCER_PASSWORD: "${PGBOUNCER_PASSWORD}"
       PGBACKREST_STANZA: "{{app_name_snake}}"
       PGBACKREST_PG1_PATH: "/var/lib/postgresql/data"
       PGBACKREST_REPO1_TYPE: "${PGBACKREST_REPO_TYPE:-none}"
@@ -52,7 +51,7 @@ services:
         "-c",
         "config_file=/etc/postgresql/postgresql.conf",
         "-c",
-        "log_min_messages=fatal",
+        "log_min_messages=warning",
         "-c",
         "max_connections=300",
         "-c",
@@ -73,3 +72,4 @@ services:
 
 volumes:
   db-config: null
+  db-data: null
