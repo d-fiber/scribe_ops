@@ -127,6 +127,29 @@ for name, service in document["services"].items():
 assert not missing, f"required but never written: {missing}"
 PY
 
+  say "$fixture: a target renders for the machine it names, not for this one"
+  for target in vps big; do
+    ( cd "$work" && SCRIBE_STACK_HOME="$OUT/cache-$target" "$TOOLS/out/scribe" run --target "$target" --dry-run ) \
+      > "$OUT/$fixture.$target.log" 2>&1 || { cat "$OUT/$fixture.$target.log"; fail "$fixture: --target $target refused."; }
+  done
+
+  python3 - "$OUT" "$fixture" <<'PY'
+import pathlib, re, sys, yaml
+out, fixture = pathlib.Path(sys.argv[1]), sys.argv[2]
+
+def limits(log):
+    stack = pathlib.Path(re.search(r"^Assembled \S+ in (\S+)$", log.read_text(), re.M).group(1))
+    document = yaml.safe_load((stack / "resources.yaml").read_text())
+    return {n: s["deploy"]["resources"]["limits"] for n, s in document["services"].items()}
+
+vps, big = limits(out / f"{fixture}.vps.log"), limits(out / f"{fixture}.big.log")
+assert vps["api"]["memory"] != big["api"]["memory"], "two machines gave api the same memory"
+assert "cpus" in vps["api"], "the target asking for a ceiling got none"
+assert "cpus" not in big["api"], "the target asking for no ceiling got one"
+print(f"    4c/8t/4g  api {vps['api']['memory']}, cpus {vps['api']['cpus']}")
+print(f"    16c/32t/64g  api {big['api']['memory']}, no ceiling")
+PY
+
   say "$fixture: nothing was left unrendered"
   if grep -rlq '{{' "$stack"; then
     grep -rln '{{' "$stack"
