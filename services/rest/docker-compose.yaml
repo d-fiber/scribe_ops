@@ -3,8 +3,8 @@ name: "{{app_name_snake}}"
 services:
   rest:
     build:
-      context: "{{service_database}}"
-      dockerfile: "Dockerfile.rest"
+      context: "{{service_rest}}"
+      dockerfile: "Dockerfile"
     restart: "unless-stopped"
     environment:
       PGRST_DB_URI: "postgres://authenticator:${AUTHENTICATOR_PASSWORD}@db:5432/postgres"

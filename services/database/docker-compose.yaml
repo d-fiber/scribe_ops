@@ -4,7 +4,7 @@ services:
   db:
     container_name: "db"
     build:
-      context: "{{sdk_root}}"
+      context: "{{service_database}}"
       dockerfile: "Dockerfile"
     restart: "unless-stopped"
     volumes:
