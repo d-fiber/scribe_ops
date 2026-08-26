@@ -43,8 +43,6 @@ jobs:
         with:
           sdk: ${{ env.DART_SDK }}
 
-      # The CLI refuses to run at all when one of the four tools it names is off
-      # PATH, deno included, whatever the command was going to do.
       - uses: denoland/setup-deno@v2
         with:
           deno-version: ${{ env.DENO_VERSION }}

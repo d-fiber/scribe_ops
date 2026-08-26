@@ -30,8 +30,24 @@ node model. A second renderer would be a second thing to disagree with the first
 
 ## What it needs
 
-Docker running, a Dart SDK, and a checkout of `scribe` and of `scribe_tools` beside this one.
-`FRAMEWORK` and `TOOLS` name them when they sit elsewhere.
+Docker running, a Dart SDK, **a Deno**, and a checkout of `scribe` and of `scribe_tools` beside
+this one. `FRAMEWORK` and `TOOLS` name them when they sit elsewhere.
+
+Deno is there for a reason worth knowing before it costs an hour: nothing here runs Deno, but
+every command of the CLI goes through its tool check, not only the ones naming a tool in
+`requiredTools`. A machine missing one of the four gets a report and an exit before `scribe run`
+reads anything, and the report says `needs every tool above` without naming which. The CI installs
+it at a pinned version, like the framework's own suite does.
+
+## What it cannot do from a checkout alone
+
+The suite renders with `scribe_tools@dev`, so a template that introduces a placeholder needs the
+renderer that fills it to be there first. A new `{{name}}` is therefore two pushes, the CLI and
+then this, in that order, and the run fails with `unresolved variable(s)` when they are the other
+way round.
+
+It is the ordering the framework already lives by, now running in both directions: the CLI reads
+this repository's templates, and this repository renders with the CLI.
 
 Everything the run writes lands in `.rendered/`, which is ignored. Nothing is written into either
 of the neighbouring checkouts except `templates/ops/`, which the run replaces and which the CLI

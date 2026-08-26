@@ -85,7 +85,7 @@ for fixture in $(cd "$OPS/fixtures" && ls); do
   say "$fixture: the compose holds together"
   compose_files=""
   for document in "$stack"/*.yaml; do compose_files="$compose_files -f $document"; done
-  # shellcheck disable=SC2086 # the flags are one -f per document, built above.
+  # shellcheck disable=SC2086
   docker compose --project-directory "$work" -p "scribe-ops-$fixture" $compose_files config --quiet 2>/dev/null ||
     fail "$fixture: docker compose refuses the rendered stack."
 

@@ -60,6 +60,13 @@ jobs:
           FROM: ${{ github.sha }}
         run: |
           set -eu
+          outside=$(git status --porcelain | grep -v ' templates/ops/' || true)
+          if [ -n "$outside" ]; then
+            echo "the copy touched something outside templates/ops, and nothing was pushed:" >&2
+            echo "$outside" >&2
+            exit 1
+          fi
+
           if [ -z "$(git status --porcelain templates/ops)" ]; then
             echo "the CLI already carries these templates, so nothing was pushed"
             exit 0
