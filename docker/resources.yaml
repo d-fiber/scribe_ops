@@ -1,0 +1,47 @@
+name: "{{app_name_snake}}"
+
+services:
+  caddy:
+    cpu_shares: 2048
+    deploy:
+      resources:
+        limits:
+          memory: "{{caddy_mem_limit}}"
+        reservations:
+          memory: "{{caddy_mem_res}}"
+
+  kong:
+    cpu_shares: 2048
+    deploy:
+      resources:
+        limits:
+          memory: "{{kong_mem_limit}}"
+        reservations:
+          memory: "{{kong_mem_res}}"
+
+  functions:
+    cpu_shares: 1024
+    deploy:
+      resources:
+        limits:
+          memory: "{{functions_mem_limit}}"
+        reservations:
+          memory: "{{functions_mem_res}}"
+
+  api:
+    cpu_shares: {{api_cpu_shares}}
+    deploy:
+      resources:
+        limits:
+          memory: "{{api_mem_limit}}"
+        reservations:
+          memory: "{{api_mem_res}}"
+
+  worker:
+    cpu_shares: 1024
+    deploy:
+      resources:
+        limits:
+          memory: "{{worker_mem_limit}}"
+        reservations:
+          memory: "{{worker_mem_res}}"

@@ -1,0 +1,7 @@
+name: "{{app_name_snake}}"
+
+services:
+  kong:
+    environment:
+      KONG_UPSTREAM_KEEPALIVE_POOL_SIZE: "{{kong_keepalive_pool}}"
+      KONG_NGINX_WORKER_PROCESSES: "{{kong_nginx_worker_processes}}"

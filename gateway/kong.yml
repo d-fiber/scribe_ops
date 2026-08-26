@@ -1,0 +1,41 @@
+_format_version: "2.1"
+_transform: true
+
+consumers:
+  - username: anon
+    keyauth_credentials:
+      - key: $ANON_KEY
+      - key: $PUBLISHABLE_KEY
+  - username: service_role
+    keyauth_credentials:
+      - key: $SERVICE_KEY
+      - key: $SECRET_KEY
+  {{app_key_consumers}}
+
+acls:
+  - consumer: anon
+    group: anon
+  - consumer: service_role
+    group: admin
+  {{api_node_acls}}
+
+upstreams:
+  - name: api-upstream
+    algorithm: round-robin
+    healthchecks:
+      active:
+        type: http
+        http_path: /_health
+        healthy:
+          interval: 5
+          successes: 2
+        unhealthy:
+          interval: 5
+          http_failures: 3
+    targets:
+      - target: api:3000
+        weight: 100
+
+services:
+
+  {{api_nodes}}

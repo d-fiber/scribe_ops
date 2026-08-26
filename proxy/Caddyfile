@@ -1,0 +1,29 @@
+(compression) {
+	encode zstd gzip
+}
+
+(security_headers) {
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		X-Frame-Options "{args[0]}"
+		-Server
+	}
+}
+
+{$API_DOMAIN:http://api.invalid} {
+	log {
+		output stderr
+		format json
+		level ERROR
+	}
+	import security_headers DENY
+	import compression
+
+	reverse_proxy kong:8000 {
+		header_up X-Real-IP {remote_host}
+	}
+}
+
+{{dashboard_site}}

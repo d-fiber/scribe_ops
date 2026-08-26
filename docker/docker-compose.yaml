@@ -1,0 +1,314 @@
+name: "{{app_name_snake}}"
+services:
+  caddy:
+    image: "caddy:2"
+    restart: "unless-stopped"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - "{{proxy_config}}:/etc/caddy/Caddyfile:ro,z"
+      - "caddy_data:/data"
+      - "caddy_config:/config"
+      - "{{sdk_root}}/web:/srv/web:ro"
+    environment:
+      API_DOMAIN: "{{api_url}}"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:2019/config/"]
+      interval: "10s"
+      timeout: "5s"
+      retries: 5
+    depends_on:
+      kong:
+        condition: "service_healthy"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+  kong:
+    container_name: "kong"
+    image: "kong/kong:3.9.1"
+    restart: "unless-stopped"
+    volumes:
+      - "{{gateway_config}}:/home/kong/temp.yml:ro,z"
+      - "{{gateway_entrypoint}}:/home/kong/kong-entrypoint.sh:ro,z"
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: "/usr/local/kong/kong.yml"
+      KONG_PORT_MAPS: "443:8000"
+      KONG_REAL_IP_HEADER: "X-Real-IP"
+      KONG_TRUSTED_IPS: "172.16.0.0/12,192.168.0.0/16,10.0.0.0/8"
+      KONG_DNS_ORDER: "LAST,A,CNAME"
+      KONG_DNS_NOT_FOUND_TTL: "1"
+      KONG_PLUGINS: "request-transformer,cors,key-auth,acl,request-termination,ip-restriction,rate-limiting,request-size-limiting,post-function,pre-function"
+      KONG_NGINX_PROXY_PROXY_BUFFER_SIZE: "160k"
+      KONG_NGINX_PROXY_PROXY_BUFFERS: "64 160k"
+      KONG_PROXY_ACCESS_LOG: "off"
+      KONG_NGINX_HTTP_KEEPALIVE_TIMEOUT: "15s"
+      KONG_NGINX_HTTP_KEEPALIVE_REQUESTS: "1000"
+      KONG_NGINX_HTTP_CLIENT_HEADER_TIMEOUT: "10s"
+      KONG_NGINX_HTTP_CLIENT_BODY_TIMEOUT: "10s"
+      KONG_NGINX_HTTP_SEND_TIMEOUT: "10s"
+      KONG_NGINX_WORKER_PROCESSES: "auto"
+      KONG_NGINX_WORKER_CONNECTIONS: "8192"
+      KONG_UPSTREAM_KEEPALIVE_IDLE_TIMEOUT: "60"
+      KONG_UPSTREAM_KEEPALIVE_MAX_REQUESTS: "1000"
+      KONG_UPSTREAM_KEEPALIVE_POOL_SIZE: "512"
+      ANON_KEY: ${ANON_KEY}
+      SERVICE_KEY: ${SERVICE_KEY}
+      ADMIN_KEYS: ${ADMIN_KEYS}
+      APP_KEYS: ${APP_KEYS}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+
+    entrypoint: ["bash", "/home/kong/kong-entrypoint.sh"]
+    healthcheck:
+      test: ["CMD", "kong", "health"]
+      interval: "5s"
+      timeout: "5s"
+      retries: 5
+    networks:
+      default:
+        aliases:
+          - api-gw
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+  functions:
+    container_name: "functions"
+    build:
+      context: "{{docker_context}}"
+      dockerfile: "Dockerfile.functions"
+    restart: "unless-stopped"
+    volumes:
+      - "{{sdk_root}}/engine:/home/deno/functions:Z"
+      - "./{{alchemy_dir}}/sdk/js:/home/deno/{{alchemy_dir}}/sdk/js:ro"
+      - "./extensions:/home/deno/extensions:ro"
+      - "./public:/home/deno/public:ro"
+      - "deno-cache:/home/deno/.cache/deno"
+    environment:
+      JWT_SECRET: ${JWT_SECRET}
+      AUTH_INTERNAL_URL: "http://auth:9999"
+      REST_INTERNAL_URL: "http://rest:3000"
+      STORAGE_INTERNAL_URL: "http://storage:5000"
+      ANON_KEY: ${ANON_KEY}
+      SERVICE_KEY: ${SERVICE_KEY}
+      PENDING_TOKEN_SECRET: ${PENDING_TOKEN_SECRET}
+      SMTP_ACCOUNT_HOST: ${SMTP_ACCOUNT_HOST}
+      SMTP_ACCOUNT_PORT: ${SMTP_ACCOUNT_PORT}
+      SMTP_ACCOUNT_USER: ${SMTP_ACCOUNT_USER}
+      SMTP_ACCOUNT_PASS: ${SMTP_ACCOUNT_PASS}
+      SMTP_NOREPLY_HOST: ${SMTP_NOREPLY_HOST}
+      SMTP_NOREPLY_PORT: ${SMTP_NOREPLY_PORT}
+      SMTP_NOREPLY_USER: ${SMTP_NOREPLY_USER}
+      SMTP_NOREPLY_PASS: ${SMTP_NOREPLY_PASS}
+      VERIFY_JWT: "true"
+      OPENSEARCH_URL: "http://opensearch:9200"
+      INTERNAL_SECRET: ${INTERNAL_SECRET}
+      GEOCODING_API_KEY: ${GEOCODING_API_KEY}
+      APP_NAME: "{{app_name}}"
+      APP_URL: ${APP_URL}
+      APP_DEEPLINK_SCHEME: ${APP_DEEPLINK_SCHEME}
+      APP_IOS_STORE_URL: ${APP_IOS_STORE_URL}
+      APP_ANDROID_STORE_URL: ${APP_ANDROID_STORE_URL}
+      FCM_PROJECT_ID: ${FCM_PROJECT_ID}
+      FCM_CLIENT_EMAIL: ${FCM_CLIENT_EMAIL}
+      FCM_PRIVATE_KEY: ${FCM_PRIVATE_KEY}
+      TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID}
+      TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN}
+      TWILIO_MESSAGE_SERVICE_SID: ${TWILIO_MESSAGE_SERVICE_SID}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      GOOGLE_ADDITIONAL_CLIENT_IDS: ${GOOGLE_ADDITIONAL_CLIENT_IDS}
+      APPLE_CLIENT_ID: ${APPLE_CLIENT_ID}
+      APPLE_CLIENT_SECRET: ${APPLE_CLIENT_SECRET}
+      APPLE_ADDITIONAL_CLIENT_IDS: ${APPLE_ADDITIONAL_CLIENT_IDS}
+      ADMIN_URL: ${ADMIN_URL}
+      MAIN_URL: ${MAIN_URL}
+      INTRA_URL: ${INTRA_URL}
+      HOOK_SEND_EMAIL_SECRETS: ${HOOK_SEND_EMAIL_SECRETS}
+      HOOK_SEND_SMS_SECRETS: ${HOOK_SEND_SMS_SECRETS}
+      HOOK_CUSTOM_ACCESS_TOKEN_SECRETS: ${HOOK_CUSTOM_ACCESS_TOKEN_SECRETS}
+      DEVICE_PAYLOAD_PRIVATE_KEY: ${DEVICE_PAYLOAD_PRIVATE_KEY}
+      ADMIN_KEYS: ${ADMIN_KEYS}
+      APP_KEYS: ${APP_KEYS}
+      REDIS_URL: "redis://:${REDIS_PASSWORD}@redis:6379"
+      NATS_URL: "nats://${NATS_PASSWORD}@nats:4222"
+      WG_EASY_URL: "http://host.docker.internal:51821"
+      WG_EASY_PASSWORD: ${WG_EASY_PASSWORD}
+      GORSE_URL: "http://gorse:8088"
+      GORSE_API_KEY: ${GORSE_API_KEY}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    dns:
+      - "8.8.8.8"
+      - "1.1.1.1"
+    command: ["start", "--main-service", "/home/deno/functions/shell/platform/edge"]
+    depends_on:
+      kong:
+        condition: "service_healthy"
+      redis:
+        condition: "service_healthy"
+      nats:
+        condition: "service_healthy"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "bash -c 'exec 3<>/dev/tcp/localhost/9000; printf \"GET /_health HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n\" >&3; head -n 1 <&3 | grep -q \" 200 \"' 2>/dev/null",
+        ]
+      interval: "10s"
+      timeout: "5s"
+      retries: 10
+      start_period: "30s"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+  api:
+    build:
+      context: "{{docker_context}}"
+      dockerfile: "Dockerfile.api"
+    restart: "unless-stopped"
+    volumes:
+      - "{{sdk_root}}/engine:/app/scribe/engine:ro"
+      - "{{sdk_root}}/sdk:/app/scribe/sdk:ro"
+      - "./{{alchemy_dir}}/sdk/js:/app/{{alchemy_dir}}/sdk/js:ro"
+      - "./lib:/app/lib:ro"
+      - "./extensions:/app/extensions:ro"
+      - "./public:/app/public:ro"
+      - "deno-cache:/root/.cache/deno"
+    environment:
+      PORT: "3000"
+      API_MAX_INFLIGHT_BODY_MB: "{{api_max_inflight_body}}"
+      WORKER_ENDPOINT: "{{worker_endpoint}}"
+      WORKER_CALLBACK_PORT: "4747"
+      SMTP_ACCOUNT_HOST: ${SMTP_ACCOUNT_HOST}
+      SMTP_ACCOUNT_PORT: ${SMTP_ACCOUNT_PORT}
+      SMTP_ACCOUNT_USER: ${SMTP_ACCOUNT_USER}
+      SMTP_ACCOUNT_PASS: ${SMTP_ACCOUNT_PASS}
+      SMTP_NOREPLY_HOST: ${SMTP_NOREPLY_HOST}
+      SMTP_NOREPLY_PORT: ${SMTP_NOREPLY_PORT}
+      SMTP_NOREPLY_USER: ${SMTP_NOREPLY_USER}
+      SMTP_NOREPLY_PASS: ${SMTP_NOREPLY_PASS}
+      APP_NAME: "{{app_name}}"
+      JWT_SECRET: ${JWT_SECRET}
+      AUTH_INTERNAL_URL: "http://auth:9999"
+      REST_INTERNAL_URL: "http://rest:3000"
+      STORAGE_INTERNAL_URL: "http://storage:5000"
+      ANON_KEY: ${ANON_KEY}
+      SERVICE_KEY: ${SERVICE_KEY}
+      PENDING_TOKEN_SECRET: ${PENDING_TOKEN_SECRET}
+      VERIFY_JWT: "true"
+      OPENSEARCH_URL: "http://opensearch:9200"
+      INTERNAL_SECRET: ${INTERNAL_SECRET}
+      GEOCODING_API_KEY: ${GEOCODING_API_KEY}
+      APP_URL: ${APP_URL}
+      APP_DEEPLINK_SCHEME: ${APP_DEEPLINK_SCHEME}
+      APP_IOS_STORE_URL: ${APP_IOS_STORE_URL}
+      APP_ANDROID_STORE_URL: ${APP_ANDROID_STORE_URL}
+      FCM_PROJECT_ID: ${FCM_PROJECT_ID}
+      FCM_CLIENT_EMAIL: ${FCM_CLIENT_EMAIL}
+      FCM_PRIVATE_KEY: ${FCM_PRIVATE_KEY}
+      TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID}
+      TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN}
+      TWILIO_MESSAGE_SERVICE_SID: ${TWILIO_MESSAGE_SERVICE_SID}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      GOOGLE_ADDITIONAL_CLIENT_IDS: ${GOOGLE_ADDITIONAL_CLIENT_IDS}
+      APPLE_CLIENT_ID: ${APPLE_CLIENT_ID}
+      APPLE_CLIENT_SECRET: ${APPLE_CLIENT_SECRET}
+      APPLE_ADDITIONAL_CLIENT_IDS: ${APPLE_ADDITIONAL_CLIENT_IDS}
+      ADMIN_URL: ${ADMIN_URL}
+      MAIN_URL: ${MAIN_URL}
+      INTRA_URL: ${INTRA_URL}
+      HOOK_SEND_EMAIL_SECRETS: ${HOOK_SEND_EMAIL_SECRETS}
+      HOOK_SEND_SMS_SECRETS: ${HOOK_SEND_SMS_SECRETS}
+      HOOK_CUSTOM_ACCESS_TOKEN_SECRETS: ${HOOK_CUSTOM_ACCESS_TOKEN_SECRETS}
+      DEVICE_PAYLOAD_PRIVATE_KEY: ${DEVICE_PAYLOAD_PRIVATE_KEY}
+      ADMIN_KEYS: ${ADMIN_KEYS}
+      APP_KEYS: ${APP_KEYS}
+      REDIS_URL: "redis://:${REDIS_PASSWORD}@redis:6379"
+      NATS_URL: "nats://${NATS_PASSWORD}@nats:4222"
+      WG_EASY_URL: "http://host.docker.internal:51821"
+      WG_EASY_PASSWORD: ${WG_EASY_PASSWORD}
+      WG_SUBNET_PREFIX: "10.8.0."
+      GORSE_URL: "http://gorse:8088"
+      GORSE_API_KEY: ${GORSE_API_KEY}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    command:
+      - "run"
+      - "--v8-flags=--max-old-space-size={{api_max_old_space}}"
+      - "--allow-net"
+      - "--allow-env"
+      - "--allow-read"
+      - "--allow-sys=osRelease,osUptime,hostname"
+      - "--allow-run=ffmpeg"
+      - "--allow-write=/tmp"
+      - "--config"
+      - "/app/{{alchemy_dir}}/sdk/js/scribe.container.json"
+      - "/app/scribe/engine/shell/platform/server/main.ts"
+    dns:
+      - "8.8.8.8"
+      - "1.1.1.1"
+    depends_on:
+      kong:
+        condition: "service_healthy"
+      redis:
+        condition: "service_healthy"
+      nats:
+        condition: "service_healthy"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/_health || exit 1"]
+      interval: "10s"
+      timeout: "5s"
+      retries: 10
+      start_period: "60s"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  worker:
+    profiles: ["worker"]
+    container_name: "worker"
+    build:
+      context: "{{docker_context}}"
+      dockerfile: "Dockerfile.api"
+    restart: "unless-stopped"
+    volumes:
+      - "{{sdk_root}}/sdk:/app/scribe/sdk:ro"
+      - "./{{alchemy_dir}}/sdk/js:/app/{{alchemy_dir}}/sdk/js:ro"
+      - "./lib:/app/lib:ro"
+      - "{{sdk_root}}/engine:/app/scribe/engine:ro"
+      - "./contracts:/app/contracts:ro"
+      - "deno-cache:/root/.cache/deno"
+    environment:
+      WORKER_PORT: "8787"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    command:
+      - "run"
+      - "--allow-net"
+      - "--allow-env"
+      - "--allow-read"
+      - "--v8-flags=--max-old-space-size={{worker_max_old_space}}"
+      - "--config"
+      - "/app/{{alchemy_dir}}/sdk/js/scribe.container.json"
+      - "/app/scribe/engine/shell/platform/worker/main.ts"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  deno-cache: null
+  caddy_data: null
+  caddy_config: null

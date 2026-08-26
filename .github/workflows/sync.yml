@@ -1,0 +1,74 @@
+name: sync
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check that the key this needs is here
+        env:
+          KEY: ${{ secrets.TOOLS_PUSH_KEY }}
+        run: |
+          set -eu
+          [ -n "$KEY" ] && exit 0
+
+          echo "TOOLS_PUSH_KEY is not set on this repository, and nothing can be synced." >&2
+          echo "" >&2
+          echo "It is the private half of a deploy key with write access on d-fiber/scribe_tools." >&2
+          echo "A push made with GITHUB_TOKEN starts no workflow there, so the CI of the CLI would" >&2
+          echo "never see what arrived." >&2
+          echo "" >&2
+          echo "Nothing was synced." >&2
+          exit 1
+
+      - uses: actions/checkout@v4
+        with:
+          path: scribe_ops
+
+      - name: Check out the CLI these templates ship with
+        uses: actions/checkout@v4
+        with:
+          repository: d-fiber/scribe_tools
+          ref: dev
+          path: scribe_tools
+          ssh-key: ${{ secrets.TOOLS_PUSH_KEY }}
+
+      - name: Lay the templates in, adding the suffix back
+        run: |
+          set -eu
+          rm -rf scribe_tools/templates/ops
+          for file in $(cd scribe_ops && find db docker gateway proxy -type f | sort); do
+            mkdir -p "scribe_tools/templates/ops/$(dirname "$file")"
+            cp "scribe_ops/$file" "scribe_tools/templates/ops/$file.tmpl"
+          done
+
+      - name: Push what changed, or say that nothing did
+        working-directory: scribe_tools
+        env:
+          VERSION: ${{ github.ref_name }}
+          FROM: ${{ github.sha }}
+        run: |
+          set -eu
+          if [ -z "$(git status --porcelain templates/ops)" ]; then
+            echo "the CLI already carries these templates, so nothing was pushed"
+            exit 0
+          fi
+
+          git config user.name "scribe-ops"
+          git config user.email "scribe-ops@users.noreply.github.com"
+          git add templates/ops
+          git commit -m "[RELEASE]: carry the ops templates scribe_ops holds at ${FROM:0:12}"
+          git push origin dev
+
+          echo "pushed to d-fiber/scribe_tools@dev"

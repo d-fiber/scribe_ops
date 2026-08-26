@@ -1,0 +1,102 @@
+name: ci
+
+on:
+  push:
+    branches: [dev, main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DART_SDK: 3.12.2
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: scribe_ops
+
+      - name: Check out the framework the stack mounts
+        uses: actions/checkout@v4
+        with:
+          repository: d-fiber/scribe
+          ref: dev
+          path: scribe
+
+      - name: Check out the CLI that renders the templates
+        uses: actions/checkout@v4
+        with:
+          repository: d-fiber/scribe_tools
+          ref: dev
+          path: scribe_tools
+
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: ${{ env.DART_SDK }}
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.pub-cache
+          key: pub-${{ runner.os }}-${{ hashFiles('scribe_tools/pubspec.lock') }}
+          restore-keys: pub-${{ runner.os }}-
+
+      - name: Render every fixture and read what comes out
+        working-directory: scribe_ops
+        run: bash tool/verify.sh
+
+  headers:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check licence headers
+        run: bash .github/headers/check.sh
+
+  version:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check the version and what the changelog says about it
+        run: bash .github/version/check.sh
+
+  commits:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check commit messages
+        env:
+          BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+          HEAD: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+        run: bash .github/commits/check.sh "$BASE" "$HEAD"
+
+  tag:
+    needs: [verify, headers, commits, version]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Name this commit if the version moved
+        run: bash .github/version/tag.sh
