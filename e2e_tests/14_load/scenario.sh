@@ -37,7 +37,7 @@
 
 set -e
 
-SCENARIO=15_load
+SCENARIO=14_load
 WORKER=1
 FIXTURE=every-package
 . "$(dirname "$0")/../support/stack.sh"

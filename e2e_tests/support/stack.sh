@@ -129,15 +129,28 @@ query_db() {
 }
 
 CURL_IMAGE=curlimages/curl:8.11.1
+DENO_IMAGE=denoland/deno:2.7.14
 
-http_code() {
-  docker run --rm --network "${PROJECT}_app" "$CURL_IMAGE" \
+http_code_in() {
+  network=$1
+  shift
+  docker run --rm --network "${PROJECT}_$network" "$CURL_IMAGE" \
     -s -o /dev/null -w '%{http_code}' --max-time 10 "$@" 2>/dev/null
 }
 
-http_body() {
-  docker run --rm --network "${PROJECT}_app" "$CURL_IMAGE" \
+http_body_in() {
+  network=$1
+  shift
+  docker run --rm --network "${PROJECT}_$network" "$CURL_IMAGE" \
     -s --max-time 10 "$@" 2>/dev/null
+}
+
+http_code() {
+  http_code_in app "$@"
+}
+
+http_body() {
+  http_body_in app "$@"
 }
 
 http_code_on_host() {
@@ -145,13 +158,21 @@ http_code_on_host() {
     -s -o /dev/null -w '%{http_code}' --max-time 10 -H "Host: $1" "http://localhost$2" 2>/dev/null
 }
 
+answers_in() {
+  network=$1
+  label=$2
+  expected=$3
+  shift 3
+  got=$(http_code_in "$network" "$@")
+  [ "$got" = "$expected" ] || fail "$label: expected $expected, got $got"
+  say "$label answers $expected"
+}
+
 answers() {
   label=$1
   expected=$2
   shift 2
-  got=$(http_code "$@")
-  [ "$got" = "$expected" ] || fail "$label: expected $expected, got $got"
-  say "$label answers $expected"
+  answers_in app "$label" "$expected" "$@"
 }
 
 teardown() {

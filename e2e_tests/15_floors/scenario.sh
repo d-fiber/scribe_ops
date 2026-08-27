@@ -37,7 +37,7 @@
 
 set -e
 
-SCENARIO=17_floors
+SCENARIO=15_floors
 FIXTURE=every-package
 TARGET=vps
 . "$(dirname "$0")/../support/stack.sh"
