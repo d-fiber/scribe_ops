@@ -1,6 +1,7 @@
 services:
   redis:
     cpu_shares: 2048
+    memswap_limit: "{{redis_mem_limit}}"
     deploy:
       resources:
         limits:

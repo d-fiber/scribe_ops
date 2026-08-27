@@ -3,6 +3,7 @@ name: "{{app_name_snake}}"
 services:
   db:
     cpu_shares: 4096
+    memswap_limit: "{{db_mem_limit}}"
     deploy:
       resources:
         limits:

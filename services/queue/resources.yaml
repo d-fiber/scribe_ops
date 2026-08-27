@@ -1,6 +1,7 @@
 services:
   nats:
     cpu_shares: 1024
+    memswap_limit: "{{nats_mem_limit}}"
     deploy:
       resources:
         limits:

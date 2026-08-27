@@ -3,6 +3,7 @@ name: "{{app_name_snake}}"
 services:
   kong:
     cpu_shares: 2048
+    memswap_limit: "{{kong_mem_limit}}"
     deploy:
       resources:
         limits:
