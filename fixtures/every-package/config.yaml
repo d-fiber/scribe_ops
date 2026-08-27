@@ -20,12 +20,12 @@ targets:
   local:
     machine: host
   vps:
-    machine: 4c/8t/4g
+    machine: 4c/8t/8g
     cpu_cap: true
   big:
     machine: 16c/32t/64g
-  fits:
-    machine: 4c/8t/8g
+  cramped:
+    machine: 4c/8t/4g
     cpu_cap: true
 
 api:

@@ -38,11 +38,9 @@
 set -e
 
 SCENARIO=17_floors
-FIXTURE=fits
-TARGET=fits
-. "$(dirname "$0")/../support/stack.sh"
-
 FIXTURE=every-package
+TARGET=vps
+. "$(dirname "$0")/../support/stack.sh"
 
 trap teardown EXIT
 
@@ -52,7 +50,7 @@ rm -rf "$OUT/$FIXTURE"
 cp -R "$OPS/fixtures/$FIXTURE" "$OUT/$FIXTURE"
 ln -sfn "$FRAMEWORK" "$OUT/$FIXTURE/scribe"
 
-refusal=$( cd "$OUT/$FIXTURE" && SCRIBE_STACK_HOME="$OUT/cache" "$TOOLS/out/scribe" run --dry-run --target vps 2>&1 || true )
+refusal=$( cd "$OUT/$FIXTURE" && SCRIBE_STACK_HOME="$OUT/cache" "$TOOLS/out/scribe" run --dry-run --target cramped 2>&1 || true )
 case "$refusal" in
   *"does not fit on 4 c / 8 t, 4 Go"*) ;;
   *) fail "a four gigabyte machine took eight packages without a word: $(echo "$refusal" | tail -1)" ;;
@@ -61,7 +59,7 @@ say "the tool refuses eight packages on four gigabytes instead of assembling a s
 
 prepare_stack
 
-say "the stack is rendered for eight gigabytes, the smallest machine the tool accepts here"
+say "the stack is rendered for the target that fits, and every service has to answer on it"
 # shellcheck disable=SC2086
 docker compose $COMPOSE --profile realtime --profile search up -d --build >/dev/null 2>&1 \
   || fail "up refused the stack rendered for $TARGET."
