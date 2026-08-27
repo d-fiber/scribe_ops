@@ -71,7 +71,7 @@ for pair in "$FIRST_COMPOSE|fixture" "$SECOND_COMPOSE|fixture_full"; do
   # shellcheck disable=SC2086
   docker compose $compose up -d --build --no-deps kong caddy >/dev/null 2>&1 \
     || fail "$name could not start its gateway and proxy."
-  docker network connect "${name}_default" scribe_router-router-1 >/dev/null 2>&1 || true
+  docker network connect "${name}_edge" scribe_router-router-1 >/dev/null 2>&1 || true
 done
 say "the two projects are up, and neither publishes a port"
 

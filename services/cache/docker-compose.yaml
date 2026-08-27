@@ -1,5 +1,11 @@
 services:
   redis:
+    read_only: true
+    tmpfs: ["/tmp"]
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: ["ALL"]
+    cap_add: ["CHOWN", "DAC_OVERRIDE", "SETGID", "SETUID"]
+    networks: ["data"]
     image: "valkey/valkey:8.1.9-alpine"
     restart: "unless-stopped"
     volumes:

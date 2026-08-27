@@ -2,3 +2,8 @@ name: "{{app_name_snake}}"
 
 volumes:
   deno-cache: null
+
+networks:
+  edge: null
+  app: null
+  data: null

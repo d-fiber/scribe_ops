@@ -2,6 +2,9 @@ name: "{{app_name_snake}}"
 
 services:
   caddy:
+    read_only: true
+    tmpfs: ["/tmp"]
+    networks: ["edge"]
     image: "caddy:2.11.4"
     security_opt: ["no-new-privileges:true"]
     cap_drop: ["ALL"]
@@ -14,7 +17,7 @@ services:
     labels:
       traefik.enable: "true"
       scribe.hostnames: "{{app_name_snake}}.scribe.localhost,{{api_host}}"
-      traefik.docker.network: "{{app_name_snake}}_default"
+      traefik.docker.network: "{{app_name_snake}}_edge"
       traefik.http.routers.{{app_name_snake}}.rule: "Host(`{{app_name_snake}}.scribe.localhost`) || Host(`{{api_host}}`)"
       traefik.http.routers.{{app_name_snake}}.entrypoints: "web,websecure"
       traefik.http.services.{{app_name_snake}}.loadbalancer.server.port: "80"

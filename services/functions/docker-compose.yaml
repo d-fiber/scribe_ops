@@ -2,6 +2,7 @@ name: "{{app_name_snake}}"
 
 services:
   functions:
+    networks: ["app", "data"]
     profiles: ["functions"]
     build:
       context: "{{service_functions}}"

@@ -2,6 +2,11 @@ name: "{{app_name_snake}}"
 
 services:
   rest:
+    read_only: true
+    tmpfs: ["/tmp"]
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: ["ALL"]
+    networks: ["data"]
     build:
       context: "{{service_rest}}"
       dockerfile: "Dockerfile"
@@ -15,7 +20,6 @@ services:
       PGRST_DB_USE_LEGACY_GUCS: "false"
       PGRST_DB_POOL: "5"
       PGRST_JWT_SECRET: ${JWT_SECRET}
-      PGRST_APP_SETTINGS_JWT_EXP: "3600"
       PGRST_ADMIN_SERVER_PORT: "3001"
     command: ["postgrest"]
     stop_grace_period: "30s"

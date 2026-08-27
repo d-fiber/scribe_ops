@@ -2,6 +2,9 @@ name: "{{app_name_snake}}"
 
 services:
   worker:
+    read_only: true
+    tmpfs: ["/tmp"]
+    networks: ["app", "data"]
     profiles: ["worker"]
     build:
       context: "{{service_api}}"
@@ -36,7 +39,7 @@ services:
       - "--v8-flags=--max-old-space-size={{worker_max_old_space}}"
       - "--allow-net"
       - "--allow-env"
-      - "--allow-read"
+      - "--allow-read=/app,/deno-dir"
       - "--allow-sys=osRelease,osUptime,hostname"
       - "--allow-run=ffmpeg"
       - "--allow-write=/tmp"

@@ -24,7 +24,7 @@ services:
       KONG_PLUGINS: "request-transformer,cors,key-auth,acl,request-termination,ip-restriction,rate-limiting,request-size-limiting,post-function,pre-function"
       KONG_NGINX_PROXY_PROXY_BUFFER_SIZE: "160k"
       KONG_NGINX_PROXY_PROXY_BUFFERS: "64 160k"
-      KONG_PROXY_ACCESS_LOG: "off"
+      KONG_PROXY_ACCESS_LOG: "/dev/stdout"
       KONG_NGINX_HTTP_KEEPALIVE_TIMEOUT: "15s"
       KONG_NGINX_HTTP_KEEPALIVE_REQUESTS: "1000"
       KONG_NGINX_HTTP_CLIENT_HEADER_TIMEOUT: "10s"
@@ -50,7 +50,8 @@ services:
       retries: 5
       start_period: "40s"
     networks:
-      default:
+      edge: null
+      app:
         aliases:
           - api-gw
     logging:

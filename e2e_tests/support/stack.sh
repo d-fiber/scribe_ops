@@ -131,12 +131,12 @@ query_db() {
 CURL_IMAGE=curlimages/curl:8.11.1
 
 http_code() {
-  docker run --rm --network "${PROJECT}_default" "$CURL_IMAGE" \
+  docker run --rm --network "${PROJECT}_app" "$CURL_IMAGE" \
     -s -o /dev/null -w '%{http_code}' --max-time 10 "$@" 2>/dev/null
 }
 
 http_body() {
-  docker run --rm --network "${PROJECT}_default" "$CURL_IMAGE" \
+  docker run --rm --network "${PROJECT}_app" "$CURL_IMAGE" \
     -s --max-time 10 "$@" 2>/dev/null
 }
 

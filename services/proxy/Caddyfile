@@ -16,7 +16,7 @@
 	log {
 		output stderr
 		format json
-		level ERROR
+		level INFO
 	}
 	import security_headers DENY
 	import compression

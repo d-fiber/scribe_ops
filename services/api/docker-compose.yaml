@@ -2,6 +2,9 @@ name: "{{app_name_snake}}"
 
 services:
   api:
+    read_only: true
+    tmpfs: ["/tmp"]
+    networks: ["app", "data"]
     build:
       context: "{{service_api}}"
       dockerfile: "Dockerfile"
@@ -38,7 +41,7 @@ services:
       - "--v8-flags=--max-old-space-size={{api_max_old_space}}"
       - "--allow-net"
       - "--allow-env"
-      - "--allow-read"
+      - "--allow-read=/app,/deno-dir"
       - "--allow-sys=osRelease,osUptime,hostname"
       - "--allow-run=ffmpeg"
       - "--allow-write=/tmp"
