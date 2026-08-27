@@ -18,7 +18,7 @@ services:
       KONG_DECLARATIVE_CONFIG: "/usr/local/kong/kong.yml"
       KONG_PORT_MAPS: "443:8000"
       KONG_REAL_IP_HEADER: "X-Real-IP"
-      KONG_TRUSTED_IPS: "172.16.0.0/12,192.168.0.0/16,10.0.0.0/8"
+      KONG_TRUSTED_IPS: "172.16.0.0/12"
       KONG_DNS_ORDER: "LAST,A,CNAME"
       KONG_DNS_NOT_FOUND_TTL: "1"
       KONG_PLUGINS: "request-transformer,cors,key-auth,acl,request-termination,ip-restriction,rate-limiting,request-size-limiting,post-function,pre-function"
