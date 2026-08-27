@@ -70,7 +70,7 @@ stale_cli() {
 build_cli() {
   say "building the CLI against the current templates"
   rm -rf "$TOOLS/templates/ops"
-  for file in $(cd "$OPS" && find services env stack.yaml -type f | sort); do
+  for file in $(cd "$OPS" && find services env router stack.yaml -type f | sort); do
     mkdir -p "$TOOLS/templates/ops/$(dirname "$file")"
     cp "$OPS/$file" "$TOOLS/templates/ops/$file.tmpl"
   done
@@ -140,6 +140,11 @@ http_body() {
     -s --max-time 10 "$@" 2>/dev/null
 }
 
+http_code_on_host() {
+  docker run --rm --network host "$CURL_IMAGE" \
+    -s -o /dev/null -w '%{http_code}' --max-time 10 -H "Host: $1" "http://localhost$2" 2>/dev/null
+}
+
 answers() {
   label=$1
   expected=$2
@@ -150,6 +155,11 @@ answers() {
 }
 
 teardown() {
+  if [ -n "${KEEP:-}" ]; then
+    say "the stack is left up, KEEP is set"
+    return 0
+  fi
+
   # shellcheck disable=SC2086
   docker compose $COMPOSE --profile worker --profile functions --profile realtime --profile search down --volumes --remove-orphans >/dev/null 2>&1 || true
 }

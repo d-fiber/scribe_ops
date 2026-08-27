@@ -45,7 +45,7 @@ prepare_stack
 
 say "starting the gateway alone, its upstream stays down on purpose"
 # shellcheck disable=SC2086
-docker compose $COMPOSE up -d kong >/dev/null
+docker compose $COMPOSE up -d --no-deps kong >/dev/null
 
 wait_for "the gateway is healthy" 90 healthy kong \
   || fail "kong never turned healthy, it is $(state_of kong)"

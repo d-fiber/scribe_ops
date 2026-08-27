@@ -38,6 +38,7 @@
 set -e
 
 SCENARIO=08_two_stacks
+FIXTURE=every-package
 . "$(dirname "$0")/../support/stack.sh"
 
 SECOND=e2e-08_two_stacks-second
@@ -54,21 +55,25 @@ trap second_teardown EXIT
 
 say "starting the same project twice, under two compose names"
 # shellcheck disable=SC2086
-docker compose $COMPOSE up -d --build db redis >/dev/null 2>&1 || fail "the first stack refused to start."
+docker compose $COMPOSE up -d --build --no-deps db redis nats storage imgproxy >/dev/null 2>&1 \
+  || fail "the first stack refused to start."
 # shellcheck disable=SC2086
-docker compose $SECOND_COMPOSE up -d --build db redis >/dev/null 2>&1 \
+docker compose $SECOND_COMPOSE up -d --build --no-deps db redis nats storage imgproxy >/dev/null 2>&1 \
   || fail "the second stack refused to start beside the first."
 
-for service in db redis; do
+for service in db redis nats; do
   wait_for "$service of the first stack is healthy" 300 healthy "$service" \
     || fail "$service never turned healthy, it is $(state_of $service)"
 done
 
-first_db=$(container_of "$PROJECT" db)
-second_db=$(container_of "$SECOND" db)
-[ -n "$first_db" ] && [ -n "$second_db" ] || fail "one of the two stacks has no database container."
-[ "$first_db" != "$second_db" ] || fail "both stacks answer with the same container, they share it."
-say "each stack has its own database container"
+for service in db redis nats storage imgproxy; do
+  first=$(container_of "$PROJECT" "$service")
+  second=$(container_of "$SECOND" "$service")
+  [ -n "$first" ] && [ -n "$second" ] \
+    || fail "$service is missing from one of the two stacks, so a name is held by a single machine."
+  [ "$first" != "$second" ] || fail "both stacks answer with the same $service container, they share it."
+done
+say "the five services, socle and packages, exist twice and share nothing"
 
 volumes=$(docker volume ls --format '{{.Name}}' | grep -c "^${SECOND}_" || true)
 [ "$volumes" -gt 0 ] || fail "the second stack created no volume of its own, it borrowed the first's."
