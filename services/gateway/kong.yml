@@ -39,3 +39,5 @@ upstreams:
 services:
 
   {{api_nodes}}
+
+  {{codex_service}}
