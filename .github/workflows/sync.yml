@@ -48,7 +48,7 @@ jobs:
         run: |
           set -eu
           rm -rf scribe_tools/templates/ops
-          for file in $(cd scribe_ops && find services env stack.yaml -type f | sort); do
+          for file in $(cd scribe_ops && find services env router stack.yaml -type f | sort); do
             mkdir -p "scribe_tools/templates/ops/$(dirname "$file")"
             cp "scribe_ops/$file" "scribe_tools/templates/ops/$file.tmpl"
           done

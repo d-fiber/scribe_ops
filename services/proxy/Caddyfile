@@ -12,7 +12,7 @@
 	}
 }
 
-{$API_DOMAIN:http://api.invalid} {
+:80 {
 	log {
 		output stderr
 		format json
