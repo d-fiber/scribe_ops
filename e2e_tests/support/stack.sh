@@ -160,8 +160,18 @@ teardown() {
     return 0
   fi
 
+  [ -n "${COMPOSE:-}" ] || return 0
+
   # shellcheck disable=SC2086
-  docker compose $COMPOSE down --volumes --remove-orphans >/dev/null 2>&1 || true
+  removal=$(docker compose $COMPOSE --profile '*' down --volumes --remove-orphans 2>&1) || true
+
+  survivors=$(docker ps --all --quiet --filter "label=com.docker.compose.project=$PROJECT")
+  [ -z "$survivors" ] && return 0
+
+  echo "[$SCENARIO] the teardown left $PROJECT behind, the next scenario would start on a dirty host" >&2
+  echo "$removal" | sed 's/^/    /' >&2
+  # shellcheck disable=SC2086
+  docker rm --force --volumes $survivors >/dev/null 2>&1 || true
 }
 
 wait_for() {
