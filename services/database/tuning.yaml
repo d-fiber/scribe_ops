@@ -29,5 +29,4 @@ services:
         "max_parallel_workers_per_gather={{db_max_parallel_workers_per_gather}}",
         "-c",
         "wal_level=logical",
-        "-c",
       ]

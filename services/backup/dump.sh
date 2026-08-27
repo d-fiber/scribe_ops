@@ -40,7 +40,7 @@ set -e
 into=${1:-/backups/$(date -u +%Y%m%dT%H%M%SZ).dump}
 
 pg_dump --host="$PGHOST" --username="$PGUSER" --dbname="$PGDATABASE" \
-  --format=custom --compress=6 --file="$into"
+  --schema=public --format=custom --compress=6 --file="$into"
 
 pg_restore --list "$into" >/dev/null
 

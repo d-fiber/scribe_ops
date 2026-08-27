@@ -42,6 +42,12 @@ from=${1:?the dump to restore from is required}
 [ -f "$from" ] || { echo "[restore] $from does not exist" >&2; exit 1; }
 
 pg_restore --host="$PGHOST" --username="$PGUSER" --dbname="$PGDATABASE" \
-  --clean --if-exists --no-owner --no-privileges "$from"
+  --clean --if-exists --no-owner --no-privileges "$from" 2>/tmp/restore.err || true
+
+ignored=$(grep -c "^pg_restore: error" /tmp/restore.err || true)
+if [ "$ignored" -gt 0 ]; then
+  echo "[restore] $ignored object(s) the dump carries could not be replayed:" >&2
+  grep "^pg_restore: error" /tmp/restore.err | head -3 >&2
+fi
 
 echo "[restore] replayed $from"
