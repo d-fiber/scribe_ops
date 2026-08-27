@@ -1,0 +1,7 @@
+services:
+  - name: db-backup
+    weight: 37
+    runtime: oneshot
+    min: 32Mi
+    dev: 64Mi
+    profile: backup

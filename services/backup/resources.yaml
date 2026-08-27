@@ -1,0 +1,10 @@
+name: "{{app_name_snake}}"
+
+services:
+  db-backup:
+    memswap_limit: "{{db_backup_mem_limit}}"
+    deploy:
+      resources:
+        limits:
+          memory: "{{db_backup_mem_limit}}"{{db_backup_cpu_ceiling}}
+          pids: 256
