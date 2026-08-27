@@ -41,13 +41,24 @@ from=${1:?the dump to restore from is required}
 
 [ -f "$from" ] || { echo "[restore] $from does not exist" >&2; exit 1; }
 
-pg_restore --host="$PGHOST" --username="$PGUSER" --dbname="$PGDATABASE" \
-  --clean --if-exists --no-owner --no-privileges "$from" 2>/tmp/restore.err || true
-
-ignored=$(grep -c "^pg_restore: error" /tmp/restore.err || true)
-if [ "$ignored" -gt 0 ]; then
-  echo "[restore] $ignored object(s) the dump carries could not be replayed:" >&2
-  grep "^pg_restore: error" /tmp/restore.err | head -3 >&2
+if pg_restore --host="$PGHOST" --username="$PGUSER" --dbname="$PGDATABASE" \
+  --clean --if-exists --no-owner --no-privileges "$from" 2>/tmp/restore.err; then
+  echo "[restore] replayed $from whole"
+  exit 0
 fi
 
-echo "[restore] replayed $from"
+# pg_restore writes this summary only once it has walked the whole archive. A run that never got
+# that far -- an archive it could not read, a cluster it could not reach -- exits without it, and
+# that is the difference between "some objects collided" and "nothing came back". It matters
+# because --clean has already dropped what the archive was meant to replace: a caller that reads a
+# silent zero as success has an empty database and no reason to look.
+if grep -q "errors ignored on restore:" /tmp/restore.err; then
+  ignored=$(grep -c "^pg_restore: error" /tmp/restore.err || true)
+  echo "[restore] replayed $from, $ignored object(s) already in place:" >&2
+  grep "^pg_restore: error" /tmp/restore.err | head -3 >&2
+  exit 0
+fi
+
+echo "[restore] $from was not replayed at all:" >&2
+cat /tmp/restore.err >&2
+exit 1
