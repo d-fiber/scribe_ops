@@ -3,6 +3,6 @@ services:
   weight: 661
   runtime: deno
   profile: worker
-  min: 128Mi
+  min: 256Mi
   dev: 256Mi
   cpu_shares: 1024

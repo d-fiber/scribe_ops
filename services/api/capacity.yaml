@@ -2,6 +2,6 @@ services:
 - name: api
   weight: 1299
   runtime: deno
-  min: 128Mi
+  min: 256Mi
   dev: 512Mi
   cpu_shares_total: 16384
