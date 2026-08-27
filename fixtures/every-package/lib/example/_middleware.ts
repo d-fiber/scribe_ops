@@ -1,4 +1,4 @@
-import { Middleware, type RateLimiter, Time } from "@scribe/sdk";
+import { type Caller, Middleware, type RateLimiter, Time } from "@scribe/sdk";
 
 /**
  * Wraps every route under this node.
@@ -7,6 +7,10 @@ import { Middleware, type RateLimiter, Time } from "@scribe/sdk";
  * that folder, and the closest to the route wins.
  */
 export class ExampleBrowsing extends Middleware {
+  protected override access(): Caller {
+    return "anonymous";
+  }
+
   /**
    * What one caller may spend on this node.
    *
