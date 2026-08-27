@@ -82,9 +82,8 @@ if docker compose $COMPOSE logs db 2>&1 | grep -q 'role "postgres" does not exis
 fi
 say "no cluster started on a half-written data directory"
 
-# shellcheck disable=SC2086
-ran=$(docker compose $COMPOSE logs db 2>/dev/null | grep -c '\[init\] running' || true)
-[ "$ran" -gt 0 ] || fail "the init script never ran, so no package ever laid its schema down."
-say "the init script ran, and played $ran file(s)"
+laid=$(query_db "select count(*) from information_schema.tables where table_name = '__trigger_events__'")
+[ "$laid" = "1" ] || fail "the init script left no schema behind, so no package ever laid one down."
+say "the init script ran and foundation laid its schema down"
 
 say "green"

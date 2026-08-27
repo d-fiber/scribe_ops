@@ -2,7 +2,9 @@
 
 ## What runs
 
-`tool/verify.sh` is the whole suite, and the CI runs the same script with nothing added.
+`tool/verify.sh` is what the CI runs, and it renders the fixtures without starting anything.
+The scenarios under `e2e_tests/` start a real stack and no workflow runs them yet: they are
+launched by hand, one directory at a time.
 
 It lays the templates into a checkout of the CLI with the `.tmpl` suffix added back, builds the
 binary from it, and renders every fixture under `fixtures/`. Then, per fixture:
