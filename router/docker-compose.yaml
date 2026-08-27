@@ -7,6 +7,7 @@ services:
     command:
       [
         "--providers.docker=true",
+        "--providers.docker.endpoint=tcp://socket-proxy:2375",
         "--providers.docker.exposedByDefault=false",
         "--entrypoints.web.address=:80",
         "--entrypoints.websecure.address=:443",
@@ -18,8 +19,10 @@ services:
     ports:
       - "80:80"
       - "443:443"
-    volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    networks: ["socket"]
+    depends_on:
+      socket-proxy:
+        condition: "service_started"
     security_opt: ["no-new-privileges:true"]
     cap_drop: ["ALL"]
     cap_add: ["NET_BIND_SERVICE"]
@@ -34,3 +37,26 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+
+  socket-proxy:
+    image: "tecnativa/docker-socket-proxy:v0.5.0"
+    restart: "unless-stopped"
+    networks: ["socket"]
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    environment:
+      CONTAINERS: "1"
+      NETWORKS: "1"
+      EVENTS: "1"
+      VERSION: "1"
+      POST: "0"
+    security_opt: ["no-new-privileges:true"]
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  socket:
+    internal: true

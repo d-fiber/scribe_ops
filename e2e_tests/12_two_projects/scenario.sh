@@ -61,6 +61,14 @@ trap both_down EXIT
 say "starting the one router this machine has"
 docker compose -p scribe_router -f "$OPS/router/docker-compose.yaml" up -d >/dev/null 2>&1 \
   || fail "the router did not start."
+
+mounted=$(docker ps --filter "label=com.docker.compose.project=scribe_router" --format '{{.Names}}' \
+  | while IFS= read -r name; do
+      docker inspect "$name" --format '{{range .Mounts}}{{if eq .Destination "/var/run/docker.sock"}}{{$.Name}}{{end}}{{end}}'
+    done | tr -d '/' | tr '\n' ' ')
+[ "$(echo "$mounted" | xargs)" = "scribe_router-socket-proxy-1" ] \
+  || fail "the docker socket is mounted by '$mounted', and only the socket proxy may hold it."
+say "the router never sees the docker socket, only the proxy in front of it does"
 wait_for "the router is healthy" 90 \
   sh -c "[ \"\$(docker compose -p scribe_router -f $OPS/router/docker-compose.yaml ps router --format '{{.Health}}')\" = healthy ]" \
   || fail "the router never turned healthy."
