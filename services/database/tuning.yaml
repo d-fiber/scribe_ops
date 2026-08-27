@@ -28,7 +28,6 @@ services:
         "-c",
         "max_parallel_workers_per_gather={{db_max_parallel_workers_per_gather}}",
         "-c",
-        "archive_mode=${PGBACKREST_ARCHIVE_MODE:-off}",
+        "wal_level=logical",
         "-c",
-        "archive_command=pgbackrest archive-push %p",
       ]

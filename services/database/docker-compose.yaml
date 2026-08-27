@@ -2,6 +2,10 @@ name: "{{app_name_snake}}"
 
 services:
   db:
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: ["ALL"]
+    cap_add: ["CHOWN", "DAC_OVERRIDE", "FOWNER", "SETGID", "SETUID"]
+    networks: ["data"]
     build:
       context: "{{service_database}}"
       dockerfile: "Dockerfile"
@@ -16,25 +20,7 @@ services:
       POSTGRES_HOST: "/var/run/postgresql"
       AUTHENTICATOR_PASSWORD: "${AUTHENTICATOR_PASSWORD}"
       PGBOUNCER_PASSWORD: "${PGBOUNCER_PASSWORD}"
-      PGBACKREST_STANZA: "{{app_name_snake}}"
-      PGBACKREST_PG1_PATH: "/var/lib/postgresql/data"
-      PGBACKREST_REPO1_TYPE: "${PGBACKREST_REPO_TYPE:-none}"
-      PGBACKREST_REPO1_PATH: "/pgbackrest"
-      PGBACKREST_REPO1_S3_BUCKET: "${PGBACKREST_BUCKET:-}"
-      PGBACKREST_REPO1_S3_ENDPOINT: "${PGBACKREST_ENDPOINT:-}"
-      PGBACKREST_REPO1_S3_REGION: "${PGBACKREST_REGION:-}"
-      PGBACKREST_REPO1_S3_KEY: "${PGBACKREST_KEY:-}"
-      PGBACKREST_REPO1_S3_KEY_SECRET: "${PGBACKREST_KEY_SECRET:-}"
-      PGBACKREST_REPO1_S3_URI_STYLE: "path"
-      PGBACKREST_REPO1_RETENTION_FULL: "2"
-      PGBACKREST_COMPRESS_TYPE: "zst"
-      PGBACKREST_COMPRESS_LEVEL: "3"
-      PGBACKREST_PROCESS_MAX: "4"
-      PGBACKREST_ARCHIVE_ASYNC: "y"
-      PGBACKREST_SPOOL_PATH: "/var/spool/pgbackrest"
-      PGBACKREST_LOG_PATH: "/var/log/pgbackrest"
-      PGBACKREST_START_FAST: "y"
-      PGBACKREST_DELTA: "y"
+      MIGRATOR_PASSWORD: "${MIGRATOR_PASSWORD}"
       PGPORT: "5432"
       POSTGRES_PORT: "5432"
       PGPASSWORD: ${POSTGRES_PASSWORD}

@@ -36,6 +36,22 @@
 
 \getenv authenticator AUTHENTICATOR_PASSWORD
 \getenv pgbouncer PGBOUNCER_PASSWORD
+\getenv migrator MIGRATOR_PASSWORD
 
 ALTER USER authenticator WITH PASSWORD :'authenticator';
 ALTER USER pgbouncer     WITH PASSWORD :'pgbouncer';
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'migrator') THEN
+    CREATE ROLE migrator LOGIN;
+  END IF;
+END
+$$;
+
+ALTER USER migrator WITH PASSWORD :'migrator';
+GRANT CREATE, USAGE ON SCHEMA public TO migrator;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO migrator;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO migrator;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO migrator;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO migrator;

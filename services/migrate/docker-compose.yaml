@@ -2,10 +2,15 @@ name: "{{app_name_snake}}"
 
 services:
   db-migrate:
+    read_only: true
+    tmpfs: ["/tmp"]
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: ["ALL"]
+    networks: ["data"]
     image: "ghcr.io/amacneil/dbmate:2.35.0"
     restart: "no"
     environment:
-      DATABASE_URL: "postgres://postgres:${POSTGRES_PASSWORD}@db:5432/postgres?sslmode=disable"
+      DATABASE_URL: "postgres://migrator:${MIGRATOR_PASSWORD}@db:5432/postgres?sslmode=disable"
     volumes:
       - "{{project_db_migrations}}:/db/migrations/project:ro"
       - "{{service_migrate}}/run-migrations.sh:/run-migrations.sh:ro"
