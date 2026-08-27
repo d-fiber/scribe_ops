@@ -5,7 +5,7 @@ services:
     read_only: true
     tmpfs: ["/tmp"]
     networks: ["edge"]
-    image: "caddy:2.11.4"
+    image: "caddy:2.11.4"{{proxy_ports}}
     security_opt: ["no-new-privileges:true"]
     cap_drop: ["ALL"]
     ulimits:

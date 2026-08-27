@@ -11,12 +11,21 @@ dashboard: ""
 
 targets:
   local:
+    kind: dev
     machine: host
   vps:
-    machine: 4c/8t/4g
+    kind: machine
+    machine:
+      cores: 4
+      threads: 8
+      memory: 4g
     cpu_cap: true
   big:
-    machine: 16c/32t/64g
+    kind: machine
+    machine:
+      cores: 16
+      threads: 32
+      memory: 64g
 
 api:
   url: "https://fixture.example.com"
