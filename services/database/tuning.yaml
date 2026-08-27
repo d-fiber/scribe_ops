@@ -8,7 +8,7 @@ services:
         "-c",
         "config_file=/etc/postgresql/postgresql.conf",
         "-c",
-        "log_min_messages=fatal",
+        "log_min_messages=warning",
         "-c",
         "max_connections={{db_max_connections}}",
         "-c",

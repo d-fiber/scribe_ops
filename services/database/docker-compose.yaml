@@ -41,28 +41,30 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       PGDATABASE: "postgres"
       POSTGRES_DB: "postgres"
-      JWT_SECRET: ${JWT_SECRET}
-      JWT_EXP: "3600"
-      INTERNAL_SECRET: ${INTERNAL_SECRET}
+      POSTGRES_USER: "supabase_admin"
+    shm_size: "256mb"
     command:
       [
         "postgres",
         "-c",
         "config_file=/etc/postgresql/postgresql.conf",
         "-c",
-        "log_min_messages=warning",
+        "max_connections=50",
         "-c",
-        "max_connections=300",
+        "shared_buffers=128MB",
         "-c",
-        "shared_buffers=4GB",
-        "-c",
-        "effective_cache_size=12GB",
+        "effective_cache_size=384MB",
       ]
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "postgres", "-h", "localhost"]
-      interval: "5s"
+      test:
+        [
+          "CMD-SHELL",
+          "psql -U postgres -h 127.0.0.1 -tAc \"select 1 from pg_roles where rolname = 'authenticator'\" | grep -q 1",
+        ]
+      interval: "10s"
       timeout: "5s"
       retries: 10
+      start_period: "60s"
     logging:
       driver: "json-file"
       options:
