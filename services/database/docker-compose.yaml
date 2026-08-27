@@ -10,7 +10,6 @@ services:
       - "{{service_database}}/roles.sql:/docker-entrypoint-initdb.d/init-scripts/98-roles.sql:Z"
       - "{{sdk_root}}/packages/foundation/db/init:/docker-entrypoint-init-sql/foundation:ro"
       - "{{project_db_init}}:/docker-entrypoint-init-sql/project:ro"
-      - "{{service_database}}/run-init-scripts.sh:/docker-entrypoint-initdb.d/zz-run-init-scripts.sh:Z"
       - "db-data:/var/lib/postgresql/data"
       - "db-config:/etc/postgresql-custom"
     environment:

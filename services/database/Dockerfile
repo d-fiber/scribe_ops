@@ -16,3 +16,5 @@ RUN set -eux; \
 RUN mkdir -p /var/log/pgbackrest /var/spool/pgbackrest \
     && chown -R postgres:postgres /var/log/pgbackrest /var/spool/pgbackrest
 
+COPY run-init-scripts.sh /docker-entrypoint-initdb.d/zz-run-init-scripts.sh
+RUN chmod 0755 /docker-entrypoint-initdb.d/zz-run-init-scripts.sh

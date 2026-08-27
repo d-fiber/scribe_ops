@@ -34,7 +34,6 @@
 -- This header is a summary written for convenience. Where it differs from the
 -- LICENSE file, the LICENSE file governs.
 
-
 \getenv authenticator AUTHENTICATOR_PASSWORD
 \getenv pgbouncer PGBOUNCER_PASSWORD
 
