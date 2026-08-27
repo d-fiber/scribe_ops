@@ -35,38 +35,43 @@
 # This header is a summary written for convenience. Where it differs from the
 # LICENSE file, the LICENSE file governs.
 
-SCENARIO=00_datastores
-# shellcheck source=../support/stack.sh
+set -e
+
+SCENARIO=08_two_stacks
 . "$(dirname "$0")/../support/stack.sh"
 
+SECOND=e2e-08_two_stacks-second
+
+second_teardown() {
+  # shellcheck disable=SC2086
+  docker compose $SECOND_COMPOSE down --volumes --remove-orphans >/dev/null 2>&1 || true
+  teardown
+}
+
 prepare_stack
-trap teardown EXIT
+SECOND_COMPOSE=$(echo "$COMPOSE" | sed "s|-p $PROJECT|-p $SECOND|")
+trap second_teardown EXIT
 
-say "starting redis and nats"
+say "starting the same project twice, under two compose names"
 # shellcheck disable=SC2086
-docker compose $COMPOSE up -d redis nats >/dev/null 2>&1 || fail "up refused"
-
-wait_for "redis is healthy" 60 healthy redis \
-  || fail "redis never turned healthy, it is $(state_of redis)"
-wait_for "nats is healthy" 60 healthy nats \
-  || fail "nats never turned healthy, it is $(state_of nats)"
-
-password=$(awk -F= '$1 == "REDIS_PASSWORD" { print $2 }' "$WORK/.env")
-
-say "redis answers a command"
+docker compose $COMPOSE up -d --build db redis >/dev/null 2>&1 || fail "the first stack refused to start."
 # shellcheck disable=SC2086
-docker compose $COMPOSE exec -T redis valkey-cli -a "$password" --no-auth-warning ping 2>/dev/null \
-  | grep -q PONG || fail "redis did not answer PONG"
+docker compose $SECOND_COMPOSE up -d --build db redis >/dev/null 2>&1 \
+  || fail "the second stack refused to start beside the first."
 
-say "redis refuses a command without the password"
-# shellcheck disable=SC2086
-if docker compose $COMPOSE exec -T redis valkey-cli ping 2>/dev/null | grep -q PONG; then
-  fail "redis answered without a password"
-fi
+for service in db redis; do
+  wait_for "$service of the first stack is healthy" 300 healthy "$service" \
+    || fail "$service never turned healthy, it is $(state_of $service)"
+done
 
-say "nats answers on its monitoring port"
-# shellcheck disable=SC2086
-docker compose $COMPOSE exec -T nats wget -qO- http://localhost:8222/healthz >/dev/null 2>&1 \
-  || fail "nats did not answer on 8222"
+first_db=$(container_of "$PROJECT" db)
+second_db=$(container_of "$SECOND" db)
+[ -n "$first_db" ] && [ -n "$second_db" ] || fail "one of the two stacks has no database container."
+[ "$first_db" != "$second_db" ] || fail "both stacks answer with the same container, they share it."
+say "each stack has its own database container"
+
+volumes=$(docker volume ls --format '{{.Name}}' | grep -c "^${SECOND}_" || true)
+[ "$volumes" -gt 0 ] || fail "the second stack created no volume of its own, it borrowed the first's."
+say "each stack has its own volumes"
 
 say "green"

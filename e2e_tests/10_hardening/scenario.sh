@@ -35,38 +35,51 @@
 # This header is a summary written for convenience. Where it differs from the
 # LICENSE file, the LICENSE file governs.
 
-SCENARIO=00_datastores
-# shellcheck source=../support/stack.sh
+set -e
+
+SCENARIO=10_hardening
 . "$(dirname "$0")/../support/stack.sh"
 
-prepare_stack
 trap teardown EXIT
+prepare_stack
 
-say "starting redis and nats"
+say "starting every service the hardening applies to"
 # shellcheck disable=SC2086
-docker compose $COMPOSE up -d redis nats >/dev/null 2>&1 || fail "up refused"
+docker compose $COMPOSE up -d --build api kong caddy db redis nats >/dev/null 2>&1 \
+  || fail "up refused the stack."
 
-wait_for "redis is healthy" 60 healthy redis \
-  || fail "redis never turned healthy, it is $(state_of redis)"
-wait_for "nats is healthy" 60 healthy nats \
-  || fail "nats never turned healthy, it is $(state_of nats)"
+wait_for "the api is healthy" 300 healthy api || fail "api never turned healthy, it is $(state_of api)"
 
-password=$(awk -F= '$1 == "REDIS_PASSWORD" { print $2 }' "$WORK/.env")
+for service in api kong caddy; do
+  privileged=$(inspect_of "$service" '{{index .HostConfig.SecurityOpt 0}}')
+  case "$privileged" in
+    *no-new-privileges*) ;;
+    *) fail "$service can still gain privileges, it carries '$privileged'." ;;
+  esac
+done
+say "the three services that face the network cannot gain privileges"
 
-say "redis answers a command"
-# shellcheck disable=SC2086
-docker compose $COMPOSE exec -T redis valkey-cli -a "$password" --no-auth-warning ping 2>/dev/null \
-  | grep -q PONG || fail "redis did not answer PONG"
+for service in api kong caddy; do
+  dropped=$(inspect_of "$service" '{{.HostConfig.CapDrop}}')
+  case "$dropped" in
+    *ALL*) ;;
+    *) fail "$service keeps its capabilities, it drops '$dropped'." ;;
+  esac
+done
+say "each of them starts with every capability dropped"
 
-say "redis refuses a command without the password"
-# shellcheck disable=SC2086
-if docker compose $COMPOSE exec -T redis valkey-cli ping 2>/dev/null | grep -q PONG; then
-  fail "redis answered without a password"
-fi
+for service in api worker; do
+  declared=$(grep -c '^ *user:' "$OPS/services/${service}/docker-compose.yaml" || true)
+  [ "$declared" -ge 1 ] || fail "$service no longer declares the user it runs as."
+done
+uid=$(inspect_of api '{{.Config.User}}')
+[ -n "$uid" ] && [ "$uid" != "0" ] && [ "$uid" != "root" ] \
+  || fail "the api runs as root, it reports '$uid'."
+say "the api runs as $uid, not as root"
 
-say "nats answers on its monitoring port"
-# shellcheck disable=SC2086
-docker compose $COMPOSE exec -T nats wget -qO- http://localhost:8222/healthz >/dev/null 2>&1 \
-  || fail "nats did not answer on 8222"
+floating=$(grep -h 'image:' "$OPS"/services/*/docker-compose.yaml \
+  | sed 's/.*image: *//;s/"//g' | grep -v '[0-9]\.[0-9]' || true)
+[ -z "$floating" ] || fail "an image is not pinned to a patch: $floating"
+say "every image the socle pulls is pinned"
 
 say "green"

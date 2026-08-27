@@ -37,7 +37,7 @@
 
 set -eu
 
-OPS=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
+OPS=$(cd "$(dirname "$0")/../.." && pwd)
 FRAMEWORK=${FRAMEWORK:-$OPS/../scribe}
 TOOLS=${TOOLS:-$OPS/../scribe_tools}
 OUT=$OPS/.e2e
@@ -87,12 +87,45 @@ prepare_stack() {
   cp -R "$OPS/fixtures/$FIXTURE" "$WORK"
   ln -sfn "$FRAMEWORK" "$WORK/scribe"
 
-  STACK=$( cd "$WORK" && SCRIBE_STACK_HOME="$OUT/cache" "$TOOLS/out/scribe" run --dry-run | awk '/^Assembled /{ print $NF }' )
+  render_arguments="--dry-run"
+  [ -n "${TARGET:-}" ] && render_arguments="$render_arguments --target $TARGET"
+  [ -n "${WORKER:-}" ] && render_arguments="$render_arguments --worker"
+
+  # shellcheck disable=SC2086
+  STACK=$( cd "$WORK" && SCRIBE_STACK_HOME="$OUT/cache" "$TOOLS/out/scribe" run $render_arguments \
+    | awk '/^Assembled /{ print $NF }' )
   [ -n "$STACK" ] || fail "the CLI wrote no stack."
 
   PROJECT="e2e-$SCENARIO"
   COMPOSE="--project-directory $WORK -p $PROJECT"
   for document in "$STACK"/*.yaml; do COMPOSE="$COMPOSE -f $document"; done
+}
+
+services_running() {
+  # shellcheck disable=SC2086
+  docker compose $COMPOSE ps --format '{{.Service}}' 2>/dev/null | sort -u | tr '\n' ' '
+}
+
+container_of() {
+  docker ps --all --filter "label=com.docker.compose.project=$1" \
+    --filter "label=com.docker.compose.service=$2" --format '{{.ID}}' | head -1
+}
+
+exit_code_of() {
+  id=$(container_of "$PROJECT" "$1")
+  [ -n "$id" ] || { echo "absent"; return 0; }
+  docker inspect "$id" --format '{{.State.ExitCode}}'
+}
+
+inspect_of() {
+  id=$(container_of "$PROJECT" "$1")
+  [ -n "$id" ] || { echo ""; return 0; }
+  docker inspect "$id" --format "$2"
+}
+
+query_db() {
+  # shellcheck disable=SC2086
+  docker compose $COMPOSE exec -T db su postgres -c "psql -tAc \"$1\"" 2>/dev/null | tr -d '[:space:]'
 }
 
 CURL_IMAGE=curlimages/curl:8.11.1
@@ -118,7 +151,7 @@ answers() {
 
 teardown() {
   # shellcheck disable=SC2086
-  docker compose $COMPOSE --profile worker --profile functions down --volumes --remove-orphans >/dev/null 2>&1 || true
+  docker compose $COMPOSE --profile worker --profile functions --profile realtime --profile search down --volumes --remove-orphans >/dev/null 2>&1 || true
 }
 
 wait_for() {

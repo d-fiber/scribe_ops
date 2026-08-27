@@ -37,7 +37,7 @@
 
 SCENARIO=01_database
 # shellcheck source=../support/stack.sh
-. "$(dirname "${BASH_SOURCE[0]}")/../support/stack.sh"
+. "$(dirname "$0")/../support/stack.sh"
 
 prepare_stack
 trap teardown EXIT
@@ -81,5 +81,10 @@ if docker compose $COMPOSE logs db 2>&1 | grep -q 'role "postgres" does not exis
   fail "the cluster is up and empty: initdb failed and restart hid it behind a healthy probe"
 fi
 say "no cluster started on a half-written data directory"
+
+# shellcheck disable=SC2086
+ran=$(docker compose $COMPOSE logs db 2>/dev/null | grep -c '\[init\] running' || true)
+[ "$ran" -gt 0 ] || fail "the init script never ran, so no package ever laid its schema down."
+say "the init script ran, and played $ran file(s)"
 
 say "green"

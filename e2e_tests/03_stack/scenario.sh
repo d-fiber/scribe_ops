@@ -35,38 +35,41 @@
 # This header is a summary written for convenience. Where it differs from the
 # LICENSE file, the LICENSE file governs.
 
-SCENARIO=00_datastores
-# shellcheck source=../support/stack.sh
+set -e
+
+SCENARIO=03_stack
 . "$(dirname "$0")/../support/stack.sh"
 
-prepare_stack
 trap teardown EXIT
+prepare_stack
 
-say "starting redis and nats"
+say "starting every service the project takes by default, this builds three images"
 # shellcheck disable=SC2086
-docker compose $COMPOSE up -d redis nats >/dev/null 2>&1 || fail "up refused"
+docker compose $COMPOSE up -d --build >/dev/null 2>&1 || fail "up refused the stack."
 
-wait_for "redis is healthy" 60 healthy redis \
-  || fail "redis never turned healthy, it is $(state_of redis)"
-wait_for "nats is healthy" 60 healthy nats \
-  || fail "nats never turned healthy, it is $(state_of nats)"
+for service in db redis nats kong api caddy; do
+  wait_for "$service is healthy" 300 healthy "$service" \
+    || fail "$service never turned healthy, it is $(state_of $service)"
+done
 
-password=$(awk -F= '$1 == "REDIS_PASSWORD" { print $2 }' "$WORK/.env")
+exited=$(exit_code_of db-migrate)
+[ "$exited" = "0" ] || fail "the migration container left with $exited, not 0."
+say "the migration ran once and left with 0"
 
-say "redis answers a command"
-# shellcheck disable=SC2086
-docker compose $COMPOSE exec -T redis valkey-cli -a "$password" --no-auth-warning ping 2>/dev/null \
-  | grep -q PONG || fail "redis did not answer PONG"
+running=$(services_running)
+for absent in functions worker; do
+  case " $running " in
+    *" $absent "*) fail "$absent started without its profile being asked for." ;;
+  esac
+done
+say "functions and worker stayed down, their profiles were not asked for"
 
-say "redis refuses a command without the password"
-# shellcheck disable=SC2086
-if docker compose $COMPOSE exec -T redis valkey-cli ping 2>/dev/null | grep -q PONG; then
-  fail "redis answered without a password"
-fi
-
-say "nats answers on its monitoring port"
-# shellcheck disable=SC2086
-docker compose $COMPOSE exec -T nats wget -qO- http://localhost:8222/healthz >/dev/null 2>&1 \
-  || fail "nats did not answer on 8222"
+for service in db redis nats kong api rest caddy; do
+  case " $running " in
+    *" $service "*) ;;
+    *) fail "$service is not running, the stack holds: $running" ;;
+  esac
+done
+say "the seven services a default project runs are up"
 
 say "green"

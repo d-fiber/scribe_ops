@@ -35,38 +35,36 @@
 # This header is a summary written for convenience. Where it differs from the
 # LICENSE file, the LICENSE file governs.
 
-SCENARIO=00_datastores
-# shellcheck source=../support/stack.sh
+set -e
+
+SCENARIO=06_target
+TARGET=vps
 . "$(dirname "$0")/../support/stack.sh"
 
-prepare_stack
 trap teardown EXIT
+prepare_stack
 
-say "starting redis and nats"
+say "the stack was rendered for the target $TARGET, not for this machine"
 # shellcheck disable=SC2086
-docker compose $COMPOSE up -d redis nats >/dev/null 2>&1 || fail "up refused"
+docker compose $COMPOSE up -d --build db redis nats >/dev/null 2>&1 \
+  || fail "the target the project declares does not start on this machine."
 
-wait_for "redis is healthy" 60 healthy redis \
-  || fail "redis never turned healthy, it is $(state_of redis)"
-wait_for "nats is healthy" 60 healthy nats \
-  || fail "nats never turned healthy, it is $(state_of nats)"
+for service in db redis nats; do
+  wait_for "$service is healthy" 300 healthy "$service" \
+    || fail "$service never turned healthy on the $TARGET budget, it is $(state_of $service)"
+done
 
-password=$(awk -F= '$1 == "REDIS_PASSWORD" { print $2 }' "$WORK/.env")
+limit=$(inspect_of db '{{.HostConfig.Memory}}')
+[ "$limit" -gt 0 ] || fail "the memory limit the target sizes never reached the daemon."
+say "the cluster carries a memory limit of $((limit / 1024 / 1024)) Mi"
 
-say "redis answers a command"
-# shellcheck disable=SC2086
-docker compose $COMPOSE exec -T redis valkey-cli -a "$password" --no-auth-warning ping 2>/dev/null \
-  | grep -q PONG || fail "redis did not answer PONG"
+cpus=$(inspect_of db '{{.HostConfig.NanoCpus}}')
+[ "$cpus" -gt 0 ] || fail "the target caps cores and the daemon sees no cpu ceiling."
+say "the cluster carries a cpu ceiling of $((cpus / 100000)) hundredths of a core"
 
-say "redis refuses a command without the password"
-# shellcheck disable=SC2086
-if docker compose $COMPOSE exec -T redis valkey-cli ping 2>/dev/null | grep -q PONG; then
-  fail "redis answered without a password"
-fi
-
-say "nats answers on its monitoring port"
-# shellcheck disable=SC2086
-docker compose $COMPOSE exec -T nats wget -qO- http://localhost:8222/healthz >/dev/null 2>&1 \
-  || fail "nats did not answer on 8222"
+host_memory=$(docker info --format '{{.MemTotal}}')
+[ "$limit" -lt "$host_memory" ] \
+  || fail "the limit is the whole machine, so the target sized nothing."
+say "the limit comes from the declared machine, not from the one running the test"
 
 say "green"

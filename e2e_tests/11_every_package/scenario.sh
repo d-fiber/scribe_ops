@@ -35,38 +35,53 @@
 # This header is a summary written for convenience. Where it differs from the
 # LICENSE file, the LICENSE file governs.
 
-SCENARIO=00_datastores
-# shellcheck source=../support/stack.sh
+set -e
+
+SCENARIO=11_every_package
+FIXTURE=every-package
 . "$(dirname "$0")/../support/stack.sh"
 
-prepare_stack
 trap teardown EXIT
+prepare_stack
 
-say "starting redis and nats"
+say "starting the stack of a project that mounts every package"
 # shellcheck disable=SC2086
-docker compose $COMPOSE up -d redis nats >/dev/null 2>&1 || fail "up refused"
+docker compose $COMPOSE up -d --build >/dev/null 2>&1 || fail "up refused the full selection."
 
-wait_for "redis is healthy" 60 healthy redis \
-  || fail "redis never turned healthy, it is $(state_of redis)"
-wait_for "nats is healthy" 60 healthy nats \
-  || fail "nats never turned healthy, it is $(state_of nats)"
+for service in db redis nats kong api; do
+  wait_for "$service is healthy" 420 healthy "$service" \
+    || fail "$service never turned healthy with every package mounted, it is $(state_of $service)"
+done
 
-password=$(awk -F= '$1 == "REDIS_PASSWORD" { print $2 }' "$WORK/.env")
+running=$(services_running)
+for service in storage imgproxy; do
+  case " $running " in
+    *" $service "*) ;;
+    *) fail "$service is mounted by a package and is not running: $running" ;;
+  esac
+done
+say "the services a mounted package brings are up beside the socle"
 
-say "redis answers a command"
+for absent in realtime opensearch; do
+  case " $running " in
+    *" $absent "*) fail "$absent started without its profile being asked for." ;;
+  esac
+done
+say "the heavy services stayed down, their profiles were not asked for"
+
+exited=$(exit_code_of db-migrate)
+[ "$exited" = "0" ] || fail "the migration container left with $exited under the full selection."
+say "the migration ran through every package's schema and left with 0"
+
+say "raising the two profiles a project has to ask for, this pulls opensearch"
 # shellcheck disable=SC2086
-docker compose $COMPOSE exec -T redis valkey-cli -a "$password" --no-auth-warning ping 2>/dev/null \
-  | grep -q PONG || fail "redis did not answer PONG"
+docker compose $COMPOSE --profile realtime --profile search up -d --build >/dev/null 2>&1 \
+  || fail "up refused the two heavy profiles."
 
-say "redis refuses a command without the password"
-# shellcheck disable=SC2086
-if docker compose $COMPOSE exec -T redis valkey-cli ping 2>/dev/null | grep -q PONG; then
-  fail "redis answered without a password"
-fi
-
-say "nats answers on its monitoring port"
-# shellcheck disable=SC2086
-docker compose $COMPOSE exec -T nats wget -qO- http://localhost:8222/healthz >/dev/null 2>&1 \
-  || fail "nats did not answer on 8222"
+for service in realtime opensearch; do
+  wait_for "$service is healthy" 600 healthy "$service" \
+    || fail "$service never turned healthy, it is $(state_of $service)"
+done
+say "both answer once the project asks for them"
 
 say "green"

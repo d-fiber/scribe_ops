@@ -35,38 +35,48 @@
 # This header is a summary written for convenience. Where it differs from the
 # LICENSE file, the LICENSE file governs.
 
-SCENARIO=00_datastores
-# shellcheck source=../support/stack.sh
+set -e
+
+SCENARIO=04_request
+WORKER=1
 . "$(dirname "$0")/../support/stack.sh"
 
-prepare_stack
 trap teardown EXIT
+prepare_stack
 
-say "starting redis and nats"
+say "starting the stack the request has to cross, worker included and one api"
 # shellcheck disable=SC2086
-docker compose $COMPOSE up -d redis nats >/dev/null 2>&1 || fail "up refused"
+docker compose $COMPOSE --profile worker up -d --build --scale api=1 >/dev/null 2>&1 \
+  || fail "up refused the stack."
 
-wait_for "redis is healthy" 60 healthy redis \
-  || fail "redis never turned healthy, it is $(state_of redis)"
-wait_for "nats is healthy" 60 healthy nats \
-  || fail "nats never turned healthy, it is $(state_of nats)"
+for service in db kong api worker; do
+  wait_for "$service is healthy" 300 healthy "$service" \
+    || fail "$service never turned healthy, it is $(state_of $service)"
+done
 
-password=$(awk -F= '$1 == "REDIS_PASSWORD" { print $2 }' "$WORK/.env")
+table=$(query_db "select count(*) from public.items")
+[ "$table" = "1" ] || fail "the sql the project ships was not replayed, items holds '$table' rows."
+say "the sql the project ships was replayed into the cluster"
 
-say "redis answers a command"
-# shellcheck disable=SC2086
-docker compose $COMPOSE exec -T redis valkey-cli -a "$password" --no-auth-warning ping 2>/dev/null \
-  | grep -q PONG || fail "redis did not answer PONG"
+answers "the collection of a public node" 200 http://kong:8000/v1/example/items
 
-say "redis refuses a command without the password"
-# shellcheck disable=SC2086
-if docker compose $COMPOSE exec -T redis valkey-cli ping 2>/dev/null | grep -q PONG; then
-  fail "redis answered without a password"
-fi
+body=$(http_body http://kong:8000/v1/example/items)
+case "$body" in
+  *'"items"'*'rendered by the fixture'*) ;;
+  *) fail "the node answered without the row the fixture inserted: $body" ;;
+esac
+say "the answer carries the row the project inserted, so the whole path is live"
 
-say "nats answers on its monitoring port"
-# shellcheck disable=SC2086
-docker compose $COMPOSE exec -T nats wget -qO- http://localhost:8222/healthz >/dev/null 2>&1 \
-  || fail "nats did not answer on 8222"
+refused=$(http_body -X POST -H 'content-type: application/json' \
+  -d '{"name":"written by the scenario"}' http://kong:8000/v1/example/items)
+case "$refused" in
+  *not_permitted*) ;;
+  *) fail "an anonymous caller was allowed to write, the declared permission does nothing: $refused" ;;
+esac
+say "a write is refused: the permission the endpoint declares is enforced on the path"
+
+rows=$(query_db "select count(*) from public.items where name = 'written by the scenario'")
+[ "$rows" = "0" ] || fail "the write was refused and the row is in the cluster anyway."
+say "nothing reached the cluster behind the refusal"
 
 say "green"

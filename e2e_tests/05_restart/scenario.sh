@@ -35,38 +35,45 @@
 # This header is a summary written for convenience. Where it differs from the
 # LICENSE file, the LICENSE file governs.
 
-SCENARIO=00_datastores
-# shellcheck source=../support/stack.sh
+set -e
+
+SCENARIO=05_restart
 . "$(dirname "$0")/../support/stack.sh"
 
-prepare_stack
 trap teardown EXIT
+prepare_stack
 
-say "starting redis and nats"
+say "starting the cluster a first time"
 # shellcheck disable=SC2086
-docker compose $COMPOSE up -d redis nats >/dev/null 2>&1 || fail "up refused"
+docker compose $COMPOSE up -d --build db >/dev/null 2>&1 || fail "up refused db."
+wait_for "the cluster is healthy" 300 healthy db || fail "db never turned healthy, it is $(state_of db)"
 
-wait_for "redis is healthy" 60 healthy redis \
-  || fail "redis never turned healthy, it is $(state_of redis)"
-wait_for "nats is healthy" 60 healthy nats \
-  || fail "nats never turned healthy, it is $(state_of nats)"
+query_db "insert into public.items (name) values ('survives a restart')" >/dev/null
+before=$(query_db "select count(*) from public.items")
+say "the cluster holds $before rows before the restart"
 
-password=$(awk -F= '$1 == "REDIS_PASSWORD" { print $2 }' "$WORK/.env")
-
-say "redis answers a command"
 # shellcheck disable=SC2086
-docker compose $COMPOSE exec -T redis valkey-cli -a "$password" --no-auth-warning ping 2>/dev/null \
-  | grep -q PONG || fail "redis did not answer PONG"
-
-say "redis refuses a command without the password"
+docker compose $COMPOSE stop db >/dev/null 2>&1
 # shellcheck disable=SC2086
-if docker compose $COMPOSE exec -T redis valkey-cli ping 2>/dev/null | grep -q PONG; then
-  fail "redis answered without a password"
-fi
+docker compose $COMPOSE up -d db >/dev/null 2>&1 || fail "the second up refused db."
+wait_for "the cluster is healthy again" 300 healthy db \
+  || fail "db never came back, it is $(state_of db)"
 
-say "nats answers on its monitoring port"
+after=$(query_db "select count(*) from public.items")
+[ "$after" = "$before" ] || fail "the volume lost rows across a restart: $before became $after."
+say "the volume kept every row across the restart"
+
+survivor=$(query_db "select count(*) from public.items where name = 'survives a restart'")
+[ "$survivor" = "1" ] || fail "the row written before the restart is gone."
+say "a row written before the restart is still there"
+
 # shellcheck disable=SC2086
-docker compose $COMPOSE exec -T nats wget -qO- http://localhost:8222/healthz >/dev/null 2>&1 \
-  || fail "nats did not answer on 8222"
+replayed=$(docker compose $COMPOSE logs db 2>/dev/null | grep -c '\[init\] running' || true)
+[ "$replayed" = "0" ] && fail "the init scripts never ran, so this proves nothing about replaying them."
+say "the init scripts ran once, at the first start"
+
+roles=$(query_db "select count(*) from pg_roles")
+[ "$roles" -ge 20 ] || fail "the second start lost roles, only $roles remain."
+say "the roles the first start created are still there"
 
 say "green"

@@ -35,38 +35,36 @@
 # This header is a summary written for convenience. Where it differs from the
 # LICENSE file, the LICENSE file governs.
 
-SCENARIO=00_datastores
-# shellcheck source=../support/stack.sh
+set -e
+
+SCENARIO=07_worker
+WORKER=1
 . "$(dirname "$0")/../support/stack.sh"
 
-prepare_stack
 trap teardown EXIT
+prepare_stack
 
-say "starting redis and nats"
+say "starting the stack with the worker profile the command asked for"
 # shellcheck disable=SC2086
-docker compose $COMPOSE up -d redis nats >/dev/null 2>&1 || fail "up refused"
+docker compose $COMPOSE --profile worker up -d --build --scale api=1 db redis nats kong api worker >/dev/null 2>&1 \
+  || fail "up refused the worker profile."
 
-wait_for "redis is healthy" 60 healthy redis \
-  || fail "redis never turned healthy, it is $(state_of redis)"
-wait_for "nats is healthy" 60 healthy nats \
-  || fail "nats never turned healthy, it is $(state_of nats)"
+for service in db redis nats kong api worker; do
+  wait_for "$service is healthy" 300 healthy "$service" \
+    || fail "$service never turned healthy, it is $(state_of $service)"
+done
 
-password=$(awk -F= '$1 == "REDIS_PASSWORD" { print $2 }' "$WORK/.env")
+endpoint=$(inspect_of api '{{range .Config.Env}}{{println .}}{{end}}' | grep '^WORKER_ENDPOINT=' | cut -d= -f2-)
+[ -n "$endpoint" ] || fail "the api was started without the address of the worker."
+say "the api was given $endpoint"
 
-say "redis answers a command"
-# shellcheck disable=SC2086
-docker compose $COMPOSE exec -T redis valkey-cli -a "$password" --no-auth-warning ping 2>/dev/null \
-  | grep -q PONG || fail "redis did not answer PONG"
+case "$endpoint" in
+  *worker*) ;;
+  *) fail "the address the api got does not name the worker: $endpoint" ;;
+esac
+say "the address names the worker container, so the api will not call itself"
 
-say "redis refuses a command without the password"
-# shellcheck disable=SC2086
-if docker compose $COMPOSE exec -T redis valkey-cli ping 2>/dev/null | grep -q PONG; then
-  fail "redis answered without a password"
-fi
-
-say "nats answers on its monitoring port"
-# shellcheck disable=SC2086
-docker compose $COMPOSE exec -T nats wget -qO- http://localhost:8222/healthz >/dev/null 2>&1 \
-  || fail "nats did not answer on 8222"
+answers "a node served through the worker" 200 http://kong:8000/v1/example/items
+say "a request answered while the project code ran in another container"
 
 say "green"

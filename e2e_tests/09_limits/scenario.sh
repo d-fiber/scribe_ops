@@ -35,38 +35,43 @@
 # This header is a summary written for convenience. Where it differs from the
 # LICENSE file, the LICENSE file governs.
 
-SCENARIO=00_datastores
-# shellcheck source=../support/stack.sh
+set -e
+
+SCENARIO=09_limits
 . "$(dirname "$0")/../support/stack.sh"
 
-prepare_stack
 trap teardown EXIT
+prepare_stack
 
-say "starting redis and nats"
+say "starting the two services the sizing gives different budgets"
 # shellcheck disable=SC2086
-docker compose $COMPOSE up -d redis nats >/dev/null 2>&1 || fail "up refused"
+docker compose $COMPOSE up -d --build redis db >/dev/null 2>&1 || fail "up refused the two services."
+for service in redis db; do
+  wait_for "$service is healthy" 300 healthy "$service" \
+    || fail "$service never turned healthy, it is $(state_of $service)"
+done
 
-wait_for "redis is healthy" 60 healthy redis \
-  || fail "redis never turned healthy, it is $(state_of redis)"
-wait_for "nats is healthy" 60 healthy nats \
-  || fail "nats never turned healthy, it is $(state_of nats)"
+host=$(docker info --format '{{.MemTotal}}')
 
-password=$(awk -F= '$1 == "REDIS_PASSWORD" { print $2 }' "$WORK/.env")
+for service in redis db; do
+  limit=$(inspect_of "$service" '{{.HostConfig.Memory}}')
+  [ "$limit" -gt 0 ] || fail "$service carries no memory limit, so nothing bounds it."
+  [ "$limit" -lt "$host" ] || fail "$service is bounded at the whole machine, which bounds nothing."
+  say "$service is bounded at $((limit / 1024 / 1024)) Mi"
 
-say "redis answers a command"
-# shellcheck disable=SC2086
-docker compose $COMPOSE exec -T redis valkey-cli -a "$password" --no-auth-warning ping 2>/dev/null \
-  | grep -q PONG || fail "redis did not answer PONG"
+  swap=$(inspect_of "$service" '{{.HostConfig.MemorySwap}}')
+  [ "$swap" = "$limit" ] \
+    || fail "$service may spend $((swap / 1024 / 1024)) Mi with swap, so the ceiling is not one."
 
-say "redis refuses a command without the password"
-# shellcheck disable=SC2086
-if docker compose $COMPOSE exec -T redis valkey-cli ping 2>/dev/null | grep -q PONG; then
-  fail "redis answered without a password"
-fi
+  shares=$(inspect_of "$service" '{{.HostConfig.CpuShares}}')
+  [ "$shares" -gt 0 ] || fail "$service carries no cpu weight, so the sizing decided nothing for it."
+done
+say "neither service can spend past its ceiling by swapping"
 
-say "nats answers on its monitoring port"
-# shellcheck disable=SC2086
-docker compose $COMPOSE exec -T nats wget -qO- http://localhost:8222/healthz >/dev/null 2>&1 \
-  || fail "nats did not answer on 8222"
+cache=$(inspect_of redis '{{.HostConfig.Memory}}')
+cluster=$(inspect_of db '{{.HostConfig.Memory}}')
+[ "$cache" != "$cluster" ] \
+  || fail "the cache and the cluster were given the same budget, so the weights are not read."
+say "the cache and the cluster were given different budgets, so the weights are read"
 
 say "green"
