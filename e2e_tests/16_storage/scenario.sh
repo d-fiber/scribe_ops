@@ -44,15 +44,18 @@ FIXTURE=every-package
 trap teardown EXIT
 prepare_stack
 
-say "starting the cluster, the gateway and what the storage package brings"
+say "starting the cluster and what the storage package brings"
 # shellcheck disable=SC2086
-docker compose $COMPOSE up -d --build db kong storage imgproxy >/dev/null 2>&1 \
+docker compose $COMPOSE up -d --build db kong storage imgproxy storage-init >/dev/null 2>&1 \
   || fail "up refused the storage services."
 
 for service in db kong storage imgproxy; do
   wait_for "$service is healthy" 420 healthy "$service" \
     || fail "$service never turned healthy, it is $(state_of $service)"
 done
+
+wait_for "storage-init seeded the schema" 120 finished storage-init \
+  || fail "storage-init never exited zero, it is $(state_of storage-init)"
 
 buckets=$(query_db "select count(*) from storage.buckets where id in ('public_bucket', 'private_bucket')")
 [ "$buckets" = "2" ] || fail "the package declares two buckets and the cluster holds '$buckets'."
@@ -65,31 +68,57 @@ sent=$(http_body -X POST \
   -H "authorization: Bearer $key" \
   -H "content-type: text/plain" \
   --data-binary "written by the scenario" \
-  "http://kong:8000/storage/v1/object/public_bucket/probe.txt")
+  "http://storage:5000/object/public_bucket/probe.txt")
 case "$sent" in
   *probe.txt*) ;;
   *) fail "the upload did not come back with the object it wrote: $sent" ;;
 esac
-say "an object is uploaded through the gateway"
+say "an object is uploaded the way the engine writes one"
 
 stored=$(query_db "select count(*) from storage.objects where name = 'probe.txt'")
 [ "$stored" = "1" ] || fail "storage reported the write and the cluster holds '$stored' rows."
 say "the object storage reported is the row the cluster holds"
 
 read_back=$(http_body -H "authorization: Bearer $key" \
-  "http://kong:8000/storage/v1/object/public_bucket/probe.txt")
+  "http://storage:5000/object/public_bucket/probe.txt")
 [ "$read_back" = "written by the scenario" ] \
   || fail "the object came back changed: '$read_back'"
 say "the bytes come back as they went in"
 
 missing=$(http_code -H "authorization: Bearer $key" \
-  "http://kong:8000/storage/v1/object/public_bucket/nothing-here.txt")
+  "http://storage:5000/object/public_bucket/nothing-here.txt")
 [ "$missing" = "400" ] || [ "$missing" = "404" ] \
   || fail "an object that was never written answered $missing."
 say "an object nobody wrote is refused, so a read proves something"
 
+png=iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAFElEQVR42mP8z8BQz0AEYBxVSF+FABJADveWkS5NAAAAAElFTkSuQmCC
+docker run --rm --network "${PROJECT}_app" --entrypoint sh "$CURL_IMAGE" -c \
+  "echo $png | base64 -d | curl -sf -X POST -H 'authorization: Bearer $key' \
+     -H 'content-type: image/png' --data-binary @- \
+     http://storage:5000/object/public_bucket/probe.png" >/dev/null 2>&1 \
+  || fail "the four-pixel image was refused on upload."
+say "an image is uploaded, so the derivation has something to work on"
+
 derived=$(http_code -H "authorization: Bearer $key" \
-  "http://kong:8000/storage/v1/render/image/public/public_bucket/probe.txt?width=10")
-say "the image derivation path answers $derived"
+  "http://storage:5000/render/image/public/public_bucket/probe.png?width=2")
+[ "$derived" = "200" ] || fail "imgproxy answered $derived instead of deriving the image."
+
+kind=$(http_body -o /dev/null -w '%{content_type}' -H "authorization: Bearer $key" \
+  "http://storage:5000/render/image/public/public_bucket/probe.png?width=2")
+case "$kind" in
+  image/*) ;;
+  *) fail "the derivation answered 200 with '$kind', which is not an image." ;;
+esac
+say "imgproxy derives the image and answers $kind"
+
+answers "a public object read through the gateway, with no key" 200 \
+  "http://kong:8000/storage/v1/object/public/public_bucket/probe.txt"
+
+answers "the same object written through the gateway" 404 \
+  -X POST --data-binary "not allowed" \
+  "http://kong:8000/storage/v1/object/public/public_bucket/probe.txt"
+
+answers "the private bucket with no token" 401 \
+  "http://kong:8000/storage/v1/object/private_bucket/probe.txt"
 
 say "green"

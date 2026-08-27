@@ -24,6 +24,9 @@ targets:
     cpu_cap: true
   big:
     machine: 16c/32t/64g
+  fits:
+    machine: 4c/8t/8g
+    cpu_cap: true
 
 api:
   url: "https://fixture.example.com"

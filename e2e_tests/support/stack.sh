@@ -200,3 +200,9 @@ healthy() {
   # shellcheck disable=SC2086
   [ "$(docker compose $COMPOSE ps "$1" --format '{{.Health}}' 2>/dev/null | head -1)" = healthy ]
 }
+
+finished() {
+  id=$(container_of "$PROJECT" "$1")
+  [ -n "$id" ] || return 1
+  [ "$(docker inspect "$id" --format '{{.State.Status}} {{.State.ExitCode}}')" = "exited 0" ]
+}
