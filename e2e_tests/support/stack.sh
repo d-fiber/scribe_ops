@@ -161,7 +161,7 @@ teardown() {
   fi
 
   # shellcheck disable=SC2086
-  docker compose $COMPOSE --profile worker --profile functions --profile realtime --profile search down --volumes --remove-orphans >/dev/null 2>&1 || true
+  docker compose $COMPOSE down --volumes --remove-orphans >/dev/null 2>&1 || true
 }
 
 wait_for() {
