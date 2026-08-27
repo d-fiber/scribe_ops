@@ -39,6 +39,9 @@ services:
       - path: "{{stack_env}}/gateway.env"
         required: true
 
+    depends_on:
+      api:
+        condition: "service_started"
     entrypoint: ["bash", "/home/kong/kong-entrypoint.sh"]
     healthcheck:
       test: ["CMD", "kong", "health"]
