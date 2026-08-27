@@ -1,6 +1,6 @@
 services:
   nats:
-    image: "nats:2.14-alpine"
+    image: "nats:2.14.5-alpine"
     restart: "unless-stopped"
     volumes:
       - "nats-data:/data"

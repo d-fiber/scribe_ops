@@ -1,6 +1,6 @@
 services:
   redis:
-    image: "valkey/valkey:8.1-alpine"
+    image: "valkey/valkey:8.1.9-alpine"
     restart: "unless-stopped"
     volumes:
       - "redis-data:/data"
@@ -12,7 +12,7 @@ services:
         "--appendonly",
         "yes",
         "--maxmemory",
-        "1gb",
+        "24mb",
         "--maxmemory-policy",
         "volatile-lru",
       ]
