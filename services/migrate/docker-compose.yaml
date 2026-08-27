@@ -2,12 +2,12 @@ name: "{{app_name_snake}}"
 
 services:
   db-migrate:
-    image: "ghcr.io/amacneil/dbmate:2"
+    image: "ghcr.io/amacneil/dbmate:2.35.0"
     restart: "no"
     environment:
       DATABASE_URL: "postgres://postgres:${POSTGRES_PASSWORD}@db:5432/postgres?sslmode=disable"
     volumes:
-      - "${PROJECT_DB_MIGRATIONS:-./lib/db/migrations}:/db/migrations/project:ro"
+      - "{{project_db_migrations}}:/db/migrations/project:ro"
       - "{{service_migrate}}/run-migrations.sh:/run-migrations.sh:ro"
     entrypoint: ["/bin/sh", "/run-migrations.sh"]
     depends_on:
