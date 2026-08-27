@@ -2,6 +2,6 @@ services:
 - name: rest
   weight: 125
   runtime: haskell
-  min: 96Mi
+  min: 64Mi
   dev: 128Mi
   cpu_shares_total: 8192
