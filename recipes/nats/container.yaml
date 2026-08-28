@@ -1,3 +1,6 @@
+brings:
+  - nats
+
 outputs:
   host: "nats"
   port: "4222"

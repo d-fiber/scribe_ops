@@ -1,3 +1,6 @@
+brings:
+  - rest
+
 outputs:
   host: "rest"
   port: "3000"

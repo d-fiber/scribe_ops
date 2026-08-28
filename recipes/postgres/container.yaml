@@ -1,3 +1,6 @@
+brings:
+  - db
+
 outputs:
   host: "db"
   port: "5432"
