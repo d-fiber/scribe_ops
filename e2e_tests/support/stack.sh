@@ -63,17 +63,13 @@ fail() {
 
 stale_cli() {
   [ -x "$TOOLS/out/scribe" ] || return 0
-  [ -n "$(find "$OPS/services" "$OPS/env" "$OPS/stack.yaml" "$TOOLS/lib" "$TOOLS/bin" \
+  [ -n "$(find "$OPS/services" "$OPS/env" "$OPS/recipes" "$OPS/stack.yaml" "$OPS/configuration.yaml" "$TOOLS/lib" "$TOOLS/bin" \
     -type f -newer "$TOOLS/out/scribe" -print -quit)" ]
 }
 
 build_cli() {
   say "building the CLI against the current templates"
-  rm -rf "$TOOLS/templates/ops"
-  for file in $(cd "$OPS" && find services env router stack.yaml -type f | sort); do
-    mkdir -p "$TOOLS/templates/ops/$(dirname "$file")"
-    cp "$OPS/$file" "$TOOLS/templates/ops/$file.tmpl"
-  done
+  bash "$OPS/tool/lay.sh" "$TOOLS"
   ( cd "$TOOLS" && dart pub get >/dev/null && mkdir -p out && dart compile exe bin/scribe.dart -o out/scribe >/dev/null )
   rm -rf "$TOOLS/out/templates" && cp -R "$TOOLS/templates" "$TOOLS/out/templates"
 }

@@ -47,11 +47,7 @@ jobs:
       - name: Lay the templates in, adding the suffix back
         run: |
           set -eu
-          rm -rf scribe_tools/templates/ops
-          for file in $(cd scribe_ops && find services env router stack.yaml -type f | sort); do
-            mkdir -p "scribe_tools/templates/ops/$(dirname "$file")"
-            cp "scribe_ops/$file" "scribe_tools/templates/ops/$file.tmpl"
-          done
+          bash scribe_ops/tool/lay.sh "$GITHUB_WORKSPACE/scribe_tools"
 
       - name: Push what changed, or say that nothing did
         working-directory: scribe_tools

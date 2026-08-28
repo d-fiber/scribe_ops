@@ -51,11 +51,7 @@ OUT=$OPS/.rendered
 [ -d "$TOOLS" ] || fail "No CLI checkout at $TOOLS. Set TOOLS to one."
 
 say "laying the templates into the CLI, adding the suffix back"
-rm -rf "$TOOLS/templates/ops"
-for file in $(cd "$OPS" && find services env router recipes stack.yaml configuration.yaml -type f | sort); do
-  mkdir -p "$TOOLS/templates/ops/$(dirname "$file")"
-  cp "$OPS/$file" "$TOOLS/templates/ops/$file.tmpl"
-done
+bash "$OPS/tool/lay.sh" "$TOOLS"
 
 say "building the CLI that renders them"
 ( cd "$TOOLS" && dart pub get >/dev/null && mkdir -p out && dart compile exe bin/scribe.dart -o out/scribe >/dev/null )
