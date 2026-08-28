@@ -102,6 +102,8 @@ jobs:
             scenarios: 03_stack 04_request 07_worker 10_hardening
           - group: packages
             scenarios: 08_two_stacks 11_every_package 18_resources
+          - group: pressure
+            scenarios: 14_load 15_floors 17_tenancy
     runs-on: ubuntu-latest
     timeout-minutes: 150
     steps:
