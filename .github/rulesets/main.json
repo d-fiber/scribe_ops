@@ -52,13 +52,13 @@
             "context": "verify"
           },
           {
-            "context": "headers"
+            "context": "checks / commits"
           },
           {
-            "context": "version"
+            "context": "checks / headers"
           },
           {
-            "context": "commits"
+            "context": "checks / version"
           }
         ]
       }
