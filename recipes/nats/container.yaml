@@ -1,0 +1,4 @@
+outputs:
+  host: "nats"
+  port: "4222"
+  url: "nats://${NATS_PASSWORD}@nats:4222"

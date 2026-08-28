@@ -52,7 +52,7 @@ OUT=$OPS/.rendered
 
 say "laying the templates into the CLI, adding the suffix back"
 rm -rf "$TOOLS/templates/ops"
-for file in $(cd "$OPS" && find services env router stack.yaml -type f | sort); do
+for file in $(cd "$OPS" && find services env router recipes stack.yaml configuration.yaml -type f | sort); do
   mkdir -p "$TOOLS/templates/ops/$(dirname "$file")"
   cp "$OPS/$file" "$TOOLS/templates/ops/$file.tmpl"
 done

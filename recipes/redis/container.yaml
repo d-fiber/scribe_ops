@@ -1,0 +1,4 @@
+outputs:
+  host: "redis"
+  port: "6379"
+  url: "redis://:${REDIS_PASSWORD}@redis:6379"
