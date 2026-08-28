@@ -9,6 +9,7 @@ services:
     build:
       context: "{{service_database}}"
       dockerfile: "Dockerfile"
+    image: "{{image_db}}"
     restart: "unless-stopped"
     volumes:
       - "db-data:/var/lib/postgresql/data"

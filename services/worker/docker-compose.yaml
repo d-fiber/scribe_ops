@@ -8,7 +8,7 @@ services:
     profiles: ["worker"]
     build:
       context: "{{build_context_api}}"
-      dockerfile: "{{service_api}}/Dockerfile"
+      dockerfile: "{{dockerfile_api}}"
     image: "{{image_worker}}"
     restart: "unless-stopped"
     user: "deno"

@@ -6,7 +6,7 @@ services:
     profiles: ["functions"]
     build:
       context: "{{build_context_functions}}"
-      dockerfile: "{{service_functions}}/Dockerfile"
+      dockerfile: "{{dockerfile_functions}}"
     image: "{{image_functions}}"
     restart: "unless-stopped"
     security_opt: ["no-new-privileges:true"]

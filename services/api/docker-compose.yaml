@@ -7,7 +7,7 @@ services:
     networks: ["app", "data"]
     build:
       context: "{{build_context_api}}"
-      dockerfile: "{{service_api}}/Dockerfile"
+      dockerfile: "{{dockerfile_api}}"
     image: "{{image_api}}"
     restart: "unless-stopped"
     user: "deno"
