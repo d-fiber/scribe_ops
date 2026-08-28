@@ -38,18 +38,31 @@
 \getenv pgbouncer PGBOUNCER_PASSWORD
 \getenv migrator MIGRATOR_PASSWORD
 
-ALTER USER authenticator WITH PASSWORD :'authenticator';
-ALTER USER pgbouncer     WITH PASSWORD :'pgbouncer';
-
 DO $$
+DECLARE
+  name text;
 BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'migrator') THEN
-    CREATE ROLE migrator LOGIN;
-  END IF;
+  FOREACH name IN ARRAY ARRAY['anon', 'authenticated', 'service_role'] LOOP
+    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = name) THEN
+      EXECUTE format('CREATE ROLE %I NOLOGIN NOINHERIT', name);
+    END IF;
+  END LOOP;
+
+  FOREACH name IN ARRAY ARRAY['authenticator', 'pgbouncer', 'migrator'] LOOP
+    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = name) THEN
+      EXECUTE format('CREATE ROLE %I LOGIN NOINHERIT', name);
+    END IF;
+  END LOOP;
 END
 $$;
 
-ALTER USER migrator WITH PASSWORD :'migrator';
+ALTER USER authenticator WITH PASSWORD :'authenticator';
+ALTER USER pgbouncer     WITH PASSWORD :'pgbouncer';
+ALTER USER migrator      WITH PASSWORD :'migrator';
+
+GRANT anon, authenticated, service_role TO authenticator;
+
+GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
 GRANT CREATE, USAGE ON SCHEMA public TO migrator;
 GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO migrator;
 GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO migrator;

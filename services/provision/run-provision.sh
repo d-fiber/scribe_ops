@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 # Copyright (C) 2026 Fiber
 #
 # This Source Code Form is subject to the terms of the Mozilla Public License,
@@ -34,17 +34,45 @@
 #
 # This header is a summary written for convenience. Where it differs from the
 # LICENSE file, the LICENSE file governs.
+set -eu
 
-set -e
+HOST=$1
+PORT=$2
+USER=$3
+DATABASE=$4
 
-run_dir() {
-  [ -d "$1" ] || return 0
-  find "$1" -name '*.sql' ! -name 'realtime.sql' | sort | while IFS= read -r f; do
-    echo "[init] running $f"
-    psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" -f "$f"
+run() {
+  psql -v ON_ERROR_STOP=1 -q -h "$HOST" -p "$PORT" -U "$USER" -d "$DATABASE" "$@"
+}
+
+echo "[provision] waiting for $HOST:$PORT"
+until pg_isready -h "$HOST" -p "$PORT" -U "$USER" -d "$DATABASE" >/dev/null 2>&1; do
+  sleep 1
+done
+
+run -c 'CREATE TABLE IF NOT EXISTS scribe_provisioning (file text PRIMARY KEY, ran_at timestamptz NOT NULL DEFAULT now())'
+
+already() {
+  [ "$(run -tAc "SELECT count(*) FROM scribe_provisioning WHERE file = '$1'")" != "0" ]
+}
+
+play() {
+  [ -e "$1" ] || return 0
+  find "$1" -name '*.sql' | sort | while IFS= read -r file; do
+    name=${file#/provision/}
+    if already "$name"; then
+      echo "[provision] $name, already run"
+      continue
+    fi
+    echo "[provision] running $name"
+    run -f "$file"
+    run -c "INSERT INTO scribe_provisioning (file) VALUES ('$name')"
   done
 }
 
-run_dir /docker-entrypoint-init-sql/foundation
-run_dir /docker-entrypoint-init-sql/modules
-run_dir /docker-entrypoint-init-sql/project
+play /provision/setup
+play /provision/foundation
+play /provision/modules
+play /provision/project
+
+echo "[provision] the database carries the roles and the schema the stack expects"

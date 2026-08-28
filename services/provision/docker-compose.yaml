@@ -1,0 +1,37 @@
+name: "{{app_name_snake}}"
+
+services:
+  provision:
+    read_only: true
+    tmpfs: ["/tmp"]
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: ["ALL"]
+    networks: ["data"]
+    image: "postgres:15.19-alpine"
+    restart: "no"
+    environment:
+      PGPASSWORD: "{{resource_postgres_password}}"
+      AUTHENTICATOR_PASSWORD: "${AUTHENTICATOR_PASSWORD}"
+      PGBOUNCER_PASSWORD: "${PGBOUNCER_PASSWORD}"
+      MIGRATOR_PASSWORD: "${MIGRATOR_PASSWORD}"
+    volumes:
+      - "{{service_provision}}/run-provision.sh:/run-provision.sh:ro"
+      - "{{service_provision}}/10-roles.sql:/provision/setup/10-roles.sql:ro"
+      - "{{sdk_root}}/packages/foundation/db/init:/provision/foundation:ro"
+      - "{{project_db_init}}:/provision/project:ro"
+    entrypoint: ["/bin/sh", "/run-provision.sh"]
+    command:
+      [
+        "{{resource_postgres_host}}",
+        "{{resource_postgres_port}}",
+        "{{resource_postgres_user}}",
+        "{{resource_postgres_database}}",
+      ]
+    depends_on:
+      db:
+        condition: "service_healthy"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "1"

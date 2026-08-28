@@ -49,6 +49,11 @@ docker compose $COMPOSE up -d --build db >/dev/null 2>&1 || fail "up refused: $(
 wait_for "the probe says healthy" 180 healthy db \
   || fail "db never turned healthy, it is $(state_of db)"
 
+say "provisioning the cluster, which is a job and no longer the entrypoint"
+# shellcheck disable=SC2086
+docker compose $COMPOSE up --exit-code-from provision provision >/dev/null 2>&1 \
+  || fail "provision refused: $(docker compose $COMPOSE logs provision 2>&1 | tail -20)"
+
 query() {
   # shellcheck disable=SC2086
   docker compose $COMPOSE exec -T db psql -U postgres -tAc "$1" 2>/dev/null | tr -d '[:space:]'
@@ -73,7 +78,7 @@ say "the four schemas the images need are there"
 password=$(awk -F= '$1 == "AUTHENTICATOR_PASSWORD" { print $2 }' "$WORK/.env")
 # shellcheck disable=SC2086
 docker compose $COMPOSE exec -T -e PGPASSWORD="$password" db psql -U authenticator -h 127.0.0.1 -d postgres -tAc 'select 1' >/dev/null 2>&1 \
-  || fail "authenticator cannot log in with the password roles.sql gave it"
+  || fail "authenticator cannot log in with the password provisioning gave it"
 say "authenticator logs in with its own password"
 
 # shellcheck disable=SC2086
@@ -83,7 +88,19 @@ fi
 say "no cluster started on a half-written data directory"
 
 laid=$(query_db "select count(*) from information_schema.tables where table_name = '__trigger_events__'")
-[ "$laid" = "1" ] || fail "the init script left no schema behind, so no package ever laid one down."
-say "the init script ran and foundation laid its schema down"
+[ "$laid" = "1" ] || fail "provision left no schema behind, so no package ever laid one down."
+say "provision ran and foundation laid its schema down"
+
+ran=$(query_db "select count(*) from scribe_provisioning")
+[ "${ran:-0}" -ge 2 ] || fail "provision recorded $ran files, so it cannot know what it already played"
+say "provision wrote down the $ran files it played"
+
+# shellcheck disable=SC2086
+docker compose $COMPOSE up --exit-code-from provision provision >/dev/null 2>&1 \
+  || fail "provision refused to run a second time, so a redeploy would break the stack"
+
+again=$(query_db "select count(*) from scribe_provisioning")
+[ "$again" = "$ran" ] || fail "a second provision played $again files instead of the $ran it had already"
+say "a second provision plays nothing again"
 
 say "green"

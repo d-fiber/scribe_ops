@@ -11,16 +11,10 @@ services:
       dockerfile: "Dockerfile"
     restart: "unless-stopped"
     volumes:
-      - "{{service_database}}/roles.sql:/docker-entrypoint-initdb.d/init-scripts/98-roles.sql:Z"
-      - "{{sdk_root}}/packages/foundation/db/init:/docker-entrypoint-init-sql/foundation:ro"
-      - "{{project_db_init}}:/docker-entrypoint-init-sql/project:ro"
       - "db-data:/var/lib/postgresql/data"
       - "db-config:/etc/postgresql-custom"
     environment:
       POSTGRES_HOST: "/var/run/postgresql"
-      AUTHENTICATOR_PASSWORD: "${AUTHENTICATOR_PASSWORD}"
-      PGBOUNCER_PASSWORD: "${PGBOUNCER_PASSWORD}"
-      MIGRATOR_PASSWORD: "${MIGRATOR_PASSWORD}"
       PGPORT: "5432"
       POSTGRES_PORT: "5432"
       PGPASSWORD: ${POSTGRES_PASSWORD}
@@ -45,7 +39,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "psql -U postgres -h 127.0.0.1 -tAc \"select 1 from pg_roles where rolname = 'authenticator'\" | grep -q 1",
+          "psql -U postgres -h 127.0.0.1 -tAc 'select 1' | grep -q 1",
         ]
       interval: "10s"
       timeout: "5s"

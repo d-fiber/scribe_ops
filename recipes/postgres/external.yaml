@@ -2,3 +2,5 @@ outputs:
   host: "${POSTGRES_HOST}"
   port: "${POSTGRES_PORT:-5432}"
   database: "${POSTGRES_DATABASE:-postgres}"
+  user: "${POSTGRES_USER}"
+  password: "${POSTGRES_PASSWORD}"

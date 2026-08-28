@@ -5,3 +5,5 @@ outputs:
   host: "db"
   port: "5432"
   database: "postgres"
+  user: "supabase_admin"
+  password: "${POSTGRES_PASSWORD}"

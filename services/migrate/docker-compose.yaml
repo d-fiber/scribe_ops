@@ -16,8 +16,8 @@ services:
       - "{{service_migrate}}/run-migrations.sh:/run-migrations.sh:ro"
     entrypoint: ["/bin/sh", "/run-migrations.sh"]
     depends_on:
-      db:
-        condition: service_healthy
+      provision:
+        condition: "service_completed_successfully"
     logging:
       driver: "json-file"
       options:

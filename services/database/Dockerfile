@@ -13,5 +13,3 @@ RUN set -eux; \
     pg_isready --version
 
 
-COPY run-init-scripts.sh /docker-entrypoint-initdb.d/zz-run-init-scripts.sh
-RUN chmod 0755 /docker-entrypoint-initdb.d/zz-run-init-scripts.sh

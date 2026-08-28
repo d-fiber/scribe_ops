@@ -34,8 +34,8 @@ services:
       retries: 10
       start_period: "40s"
     depends_on:
-      db:
-        condition: "service_healthy"
+      provision:
+        condition: "service_completed_successfully"
     logging:
       driver: "json-file"
       options:

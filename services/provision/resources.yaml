@@ -1,0 +1,9 @@
+name: "{{app_name_snake}}"
+
+services:
+  provision:
+    deploy:
+      resources:
+        limits:
+          memory: "{{provision_mem_limit}}"
+          pids: 64
