@@ -10,3 +10,4 @@ COPY --from=upstream --chmod=755 /usr/local/bin/edge-runtime /usr/local/bin/edge
 
 EXPOSE 9000
 ENTRYPOINT ["edge-runtime"]
+{{bake_functions}}

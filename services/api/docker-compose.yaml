@@ -6,8 +6,9 @@ services:
     tmpfs: ["/tmp"]
     networks: ["app", "data"]
     build:
-      context: "{{service_api}}"
-      dockerfile: "Dockerfile"
+      context: "{{build_context_api}}"
+      dockerfile: "{{service_api}}/Dockerfile"
+    image: "{{image_api}}"
     restart: "unless-stopped"
     user: "deno"
     security_opt: ["no-new-privileges:true"]
@@ -17,10 +18,7 @@ services:
         soft: 8192
         hard: 16384
     volumes:
-      - "{{sdk_root}}:/app/scribe:ro"
-      - "./{{alchemy_dir}}/sdk/js:/app/{{alchemy_dir}}/sdk/js:ro"
-      - "./lib:/app/lib:ro"
-      - "deno-cache:/deno-dir"
+{{source_mounts_api}}      - "deno-cache:/deno-dir"
     environment:
       PORT: "3000"
       APP_NAME: "{{app_name}}"

@@ -5,8 +5,9 @@ services:
     networks: ["app", "data"]
     profiles: ["functions"]
     build:
-      context: "{{service_functions}}"
-      dockerfile: "Dockerfile"
+      context: "{{build_context_functions}}"
+      dockerfile: "{{service_functions}}/Dockerfile"
+    image: "{{image_functions}}"
     restart: "unless-stopped"
     security_opt: ["no-new-privileges:true"]
     cap_drop: ["ALL"]
@@ -15,9 +16,7 @@ services:
         soft: 8192
         hard: 16384
     volumes:
-      - "{{sdk_root}}/engine:/home/deno/functions:ro"
-      - "./{{alchemy_dir}}/sdk/js:/home/deno/{{alchemy_dir}}/sdk/js:ro"
-      - "deno-cache:/deno-dir"
+{{source_mounts_functions}}      - "deno-cache:/deno-dir"
     environment:
       APP_NAME: "{{app_name}}"
     env_file:
