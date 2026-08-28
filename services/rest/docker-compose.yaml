@@ -8,8 +8,10 @@ services:
     cap_drop: ["ALL"]
     networks: ["data"]
     build:
-      context: "{{service_rest}}"
+      context: "{{local_service_rest}}"
       dockerfile: "Dockerfile"
+      {{build_platform}}
+    image: "{{image_rest}}"
     restart: "unless-stopped"
     environment:
       PGRST_DB_URI: "postgres://authenticator:${AUTHENTICATOR_PASSWORD}@{{resource_postgres_host}}:{{resource_postgres_port}}/{{resource_postgres_database}}"

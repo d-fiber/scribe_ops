@@ -7,6 +7,7 @@ services:
     build:
       context: "{{build_context_functions}}"
       dockerfile: "{{dockerfile_functions}}"
+      {{build_platform}}
     image: "{{image_functions}}"
     restart: "unless-stopped"
     security_opt: ["no-new-privileges:true"]

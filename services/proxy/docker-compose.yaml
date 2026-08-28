@@ -20,6 +20,7 @@ services:
       traefik.docker.network: "{{app_name_snake}}_edge"
       traefik.http.routers.{{app_name_snake}}.rule: "Host(`{{app_name_snake}}.scribe.localhost`) || Host(`{{api_host}}`)"
       traefik.http.routers.{{app_name_snake}}.entrypoints: "web,websecure"
+      traefik.http.routers.{{app_name_snake}}.tls.certresolver: "{{tls_resolver}}"
       traefik.http.services.{{app_name_snake}}.loadbalancer.server.port: "80"
     volumes:
       - "{{service_proxy}}/Caddyfile:/etc/caddy/Caddyfile:ro,z"

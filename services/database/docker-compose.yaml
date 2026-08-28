@@ -7,8 +7,9 @@ services:
     cap_add: ["CHOWN", "DAC_OVERRIDE", "FOWNER", "SETGID", "SETUID"]
     networks: ["data"]
     build:
-      context: "{{service_database}}"
+      context: "{{local_service_database}}"
       dockerfile: "Dockerfile"
+      {{build_platform}}
     image: "{{image_db}}"
     restart: "unless-stopped"
     volumes:
