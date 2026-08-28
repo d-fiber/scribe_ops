@@ -36,7 +36,7 @@ services:
       retries: 10
       start_period: "40s"
     depends_on:
-      provision:
+      db-migrate:
         condition: "service_completed_successfully"
     logging:
       driver: "json-file"
