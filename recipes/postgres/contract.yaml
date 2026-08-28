@@ -1,0 +1,6 @@
+outputs:
+  - host
+  - port
+  - database
+  - user
+  - password
