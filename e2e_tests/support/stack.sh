@@ -154,6 +154,16 @@ http_code_on_host() {
     -s -o /dev/null -w '%{http_code}' --max-time 10 -H "Host: $1" "http://localhost$2" 2>/dev/null
 }
 
+http_body_on_host() {
+  docker run --rm --network host "$CURL_IMAGE" \
+    -s --max-time 10 -H "Host: $1" "http://localhost$2" 2>/dev/null
+}
+
+redirect_of() {
+  docker run --rm --network host "$CURL_IMAGE" \
+    -s -o /dev/null -w '%{http_code} %{redirect_url}' --max-time 10 -H "Host: $1" "http://localhost$2" 2>/dev/null
+}
+
 answers_in() {
   network=$1
   label=$2

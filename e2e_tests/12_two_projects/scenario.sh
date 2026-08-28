@@ -93,6 +93,21 @@ for host in "$FIRST_HOST" "$SECOND_HOST"; do
   say "$host reaches its own gateway"
 done
 
+redirects_to_https() {
+  [ "$(docker run --rm --network host "$CURL_IMAGE" -s -o /dev/null -w '%{http_code} %{redirect_url}' \
+    --max-time 10 -H "Host: fixture.example.com" http://localhost/v1/internal/ 2>/dev/null)" \
+    = "301 https://fixture.example.com/v1/internal/" ]
+}
+
+wait_for "the public name is redirected to https, so the API never answers it in clear" 60 redirects_to_https \
+  || fail "the public name kept answering on the plain port instead of redirecting to https."
+
+served=$(http_body_on_host "$FIRST_HOST" /v1/internal/)
+case "$served" in
+  *"no Route matched"*) say "the name only this machine resolves keeps the plain port, having none to be sent to" ;;
+  *) fail "$FIRST_HOST answered '$served', which is the router refusing rather than the gateway answering." ;;
+esac
+
 unknown=$(http_code_on_host nothing.scribe.localhost /)
 [ "$unknown" = "404" ] || fail "an unclaimed hostname answered $unknown instead of 404."
 say "a hostname no project claims is refused by the router"

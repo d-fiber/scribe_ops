@@ -42,7 +42,7 @@ targets:
     cpu_cap: true
 
 api:
-  url: "https://fixture.example.com"
+  url: "https://fixture-full.example.com"
   cors:
     - "https://fixture.example.com"
   nodes:
