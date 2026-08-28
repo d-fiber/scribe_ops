@@ -155,18 +155,20 @@ done
 
 say "every recipe answers the contract of its type"
 python3 - "$OPS/recipes" <<'CONTRACT' || fail "a recipe does not answer its contract."
-import json, pathlib, re, sys, yaml
+import json, pathlib, sys, yaml
+
+sys.path.insert(0, "tool")
+from fill import fill, params_of
 
 root = pathlib.Path(sys.argv[1])
 broken = False
 for contract in sorted(root.glob("*/contract.yaml")):
     promised = set(yaml.safe_load(contract.read_text())["outputs"])
     for recipe in sorted(contract.parent.iterdir()):
-        if recipe.name == "contract.yaml":
+        if recipe.name == "contract.yaml" or recipe.name.endswith(".params.json"):
             continue
         machine = recipe.name.endswith(".tf.json")
-        answer = lambda m: "5432" if m.group(1).endswith("port") else "probe"
-        text = re.sub(r"\{\{([a-z_]+)\}\}", answer, recipe.read_text())
+        text = fill(recipe.read_text(), params_of(recipe))
         document = json.loads(text) if machine else yaml.safe_load(text)
         answered = set(document["output" if machine else "outputs"])
         missing = promised - answered
@@ -177,30 +179,6 @@ for contract in sorted(root.glob("*/contract.yaml")):
             print(f"    {recipe.relative_to(root)} answers all {len(promised)} of them")
 sys.exit(1 if broken else 0)
 CONTRACT
-
-say "every recipe OpenTofu applies is one it accepts"
-if command -v tofu >/dev/null; then
-  TF_PLUGIN_CACHE_DIR="${TF_PLUGIN_CACHE_DIR:-$HOME/.terraform.d/plugin-cache}"
-  export TF_PLUGIN_CACHE_DIR
-  mkdir -p "$TF_PLUGIN_CACHE_DIR"
-  for recipe in "$OPS"/recipes/*/*.tf.json; do
-    named="$(basename "$(dirname "$recipe")")/$(basename "$recipe")"
-    room="$OUT/tofu/$(basename "$(dirname "$recipe")")-$(basename "$recipe" .tf.json)"
-    mkdir -p "$room"
-    python3 - "$recipe" "$room/main.tf.json" <<'FILL'
-import pathlib, re, sys
-
-source, destination = pathlib.Path(sys.argv[1]), pathlib.Path(sys.argv[2])
-answer = lambda m: "5432" if m.group(1).endswith("port") else "probe"
-destination.write_text(re.sub(r"\{\{([a-z_]+)\}\}", answer, source.read_text()))
-FILL
-    (cd "$room" && tofu init -backend=false -input=false >/dev/null && tofu validate >/dev/null) ||
-      fail "OpenTofu refuses $named."
-    say "    $named is valid"
-  done
-else
-  say "OpenTofu is not installed, skipping it"
-fi
 
 say "the entrypoint is a script shellcheck accepts"
 if command -v shellcheck >/dev/null; then

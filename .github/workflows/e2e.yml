@@ -20,6 +20,32 @@ env:
   DENO_VERSION: 2.7.14
 
 jobs:
+  # Whether OpenTofu accepts every recipe a provider would apply.
+  #
+  # Its own job and not a step of the pull request gate: judging a recipe means
+  # downloading the provider it names, which is minutes for a cloud one, and a
+  # gate somebody runs before every commit has to answer in seconds.
+  recipes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - uses: opentofu/setup-opentofu@592200bd4b9bbf4772ace78f887668b1aee8f716 # v1.0.5
+        with:
+          tofu_version: 1.12.6
+          tofu_wrapper: false
+
+      - name: Cache the providers a recipe names, which is most of the minutes
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: ~/.terraform.d/plugin-cache
+          key: tofu-providers-${{ hashFiles('recipes/*/*.tf.json') }}
+          restore-keys: tofu-providers-
+
+      - name: Let OpenTofu judge every recipe
+        run: bash tool/recipes.sh
+
   e2e-light:
     strategy:
       fail-fast: false

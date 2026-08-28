@@ -1,0 +1,91 @@
+{
+  "terraform": {
+    "required_providers": {
+      "aws": {
+        "source": "hashicorp/aws",
+        "version": "6.19.0"
+      },
+      "random": {
+        "source": "hashicorp/random",
+        "version": "3.7.2"
+      }
+    }
+  },
+  "provider": {
+    "aws": {
+      "region": "{{region}}"
+    }
+  },
+  "resource": {
+    "random_password": {
+      "master": {
+        "length": 32,
+        "special": false
+      }
+    },
+    "aws_db_subnet_group": {
+      "postgres": {
+        "name": "{{name}}",
+        "subnet_ids": {{subnet_ids}}
+      }
+    },
+    "aws_security_group": {
+      "postgres": {
+        "name": "{{name}}",
+        "vpc_id": "{{vpc_id}}",
+        "ingress": [
+          {
+            "from_port": 5432,
+            "to_port": 5432,
+            "protocol": "tcp",
+            "cidr_blocks": {{reachable_from}},
+            "description": "the stack, and nothing else",
+            "ipv6_cidr_blocks": [],
+            "prefix_list_ids": [],
+            "security_groups": [],
+            "self": false
+          }
+        ],
+        "egress": []
+      }
+    },
+    "aws_db_instance": {
+      "postgres": {
+        "identifier": "{{name}}",
+        "engine": "postgres",
+        "engine_version": "{{version}}",
+        "instance_class": "{{instance_class}}",
+        "allocated_storage": 20,
+        "storage_encrypted": true,
+        "db_name": "postgres",
+        "username": "scribe_admin",
+        "password": "${random_password.master.result}",
+        "db_subnet_group_name": "${aws_db_subnet_group.postgres.name}",
+        "vpc_security_group_ids": [
+          "${aws_security_group.postgres.id}"
+        ],
+        "backup_retention_period": 7,
+        "skip_final_snapshot": true,
+        "apply_immediately": true
+      }
+    }
+  },
+  "output": {
+    "host": {
+      "value": "${aws_db_instance.postgres.address}"
+    },
+    "port": {
+      "value": "${aws_db_instance.postgres.port}"
+    },
+    "database": {
+      "value": "postgres"
+    },
+    "user": {
+      "value": "scribe_admin"
+    },
+    "password": {
+      "value": "${random_password.master.result}",
+      "sensitive": true
+    }
+  }
+}
