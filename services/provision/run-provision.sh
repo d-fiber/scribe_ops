@@ -46,8 +46,15 @@ run() {
 }
 
 echo "[provision] waiting for $HOST:$PORT"
+waited=0
 until pg_isready -h "$HOST" -p "$PORT" -U "$USER" -d "$DATABASE" >/dev/null 2>&1; do
-  sleep 1
+  if [ "$waited" -ge 300 ]; then
+    echo "[provision] $HOST:$PORT never answered, after ${waited}s of asking." >&2
+    echo "[provision] Nothing was played, so the database is as it was." >&2
+    exit 1
+  fi
+  sleep 2
+  waited=$((waited + 2))
 done
 
 run -c 'CREATE TABLE IF NOT EXISTS scribe_provisioning (file text PRIMARY KEY, ran_at timestamptz NOT NULL DEFAULT now())'
