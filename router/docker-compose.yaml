@@ -12,6 +12,10 @@ services:
         "--entrypoints.web.address=:80",
         "--entrypoints.websecure.address=:443",
         "--entrypoints.websecure.http.tls=true",
+        "--certificatesresolvers.public.acme.email=${SCRIBE_ACME_EMAIL:-}",
+        "--certificatesresolvers.public.acme.storage=/acme/acme.json",
+        "--certificatesresolvers.public.acme.httpchallenge=true",
+        "--certificatesresolvers.public.acme.httpchallenge.entrypoint=web",
         "--ping=true",
         "--log.level=WARN",
         "--accesslog=true",
@@ -20,6 +24,8 @@ services:
       - "80:80"
       - "443:443"
     networks: ["socket"]
+    volumes:
+      - "acme:/acme"
     depends_on:
       socket-proxy:
         condition: "service_started"
@@ -56,6 +62,9 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+
+volumes:
+  acme: null
 
 networks:
   socket:
