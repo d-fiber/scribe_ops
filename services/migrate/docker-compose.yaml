@@ -10,7 +10,7 @@ services:
     image: "ghcr.io/amacneil/dbmate:2.35.0"
     restart: "no"
     environment:
-      DATABASE_URL: "postgres://migrator:${MIGRATOR_PASSWORD}@db:5432/postgres?sslmode=disable"
+      DATABASE_URL: "postgres://migrator:${MIGRATOR_PASSWORD}@{{resource_postgres_host}}:{{resource_postgres_port}}/{{resource_postgres_database}}?sslmode=disable"
     volumes:
       - "{{project_db_migrations}}:/db/migrations/project:ro"
       - "{{service_migrate}}/run-migrations.sh:/run-migrations.sh:ro"

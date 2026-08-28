@@ -13,7 +13,7 @@ services:
     read_only: true
     tmpfs: ["/tmp"]
     environment:
-      PGHOST: "db"
+      PGHOST: "{{resource_postgres_host}}"
       PGUSER: "postgres"
       PGDATABASE: "postgres"
       PGPASSWORD: ${POSTGRES_PASSWORD}
