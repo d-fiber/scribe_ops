@@ -129,4 +129,8 @@ jobs:
             inside { print }
           ' CHANGELOG.md > /tmp/notes.md
 
-          gh release create "v$ASKED" --title "$ASKED" --notes-file /tmp/notes.md --verify-tag
+          if gh release view "v$ASKED" >/dev/null 2>&1; then
+            gh release edit "v$ASKED" --notes-file /tmp/notes.md
+          else
+            gh release create "v$ASKED" --title "$ASKED" --notes-file /tmp/notes.md --verify-tag
+          fi
