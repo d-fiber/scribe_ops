@@ -1,0 +1,4 @@
+outputs:
+  host: "${REST_HOST}"
+  port: "${REST_PORT:-3000}"
+  url: "${REST_INTERNAL_URL}"

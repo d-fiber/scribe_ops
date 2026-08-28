@@ -1,0 +1,4 @@
+outputs:
+  host: "${REDIS_HOST}"
+  port: "${REDIS_PORT:-6379}"
+  url: "${REDIS_URL}"
