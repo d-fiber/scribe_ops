@@ -138,5 +138,5 @@ this repository's templates, and this repository renders with the CLI.
 
 What the render check writes lands in `.rendered/` and what a scenario writes lands in `.e2e/`,
 both of which are ignored. Nothing is written into either of the neighbouring checkouts except
-`templates/ops/` and `out/`, which the run replaces and which the CLI repository is expected to
+`templates/deploy/` and `out/`, which the run replaces and which the CLI repository is expected to
 hold as a copy anyway.
