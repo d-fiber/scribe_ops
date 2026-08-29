@@ -1,0 +1,9 @@
+{
+  "project": "my-gcp-project",
+  "region": "europe-west1",
+  "version": "POSTGRES_16",
+  "tier": "db-custom-1-3840",
+  "reachable_from": [
+    { "value": "10.0.0.0/16" }
+  ]
+}

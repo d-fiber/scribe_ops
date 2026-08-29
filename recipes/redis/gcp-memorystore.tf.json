@@ -1,0 +1,42 @@
+{
+  "terraform": {
+    "required_providers": {
+      "google": {
+        "source": "hashicorp/google",
+        "version": "6.14.1"
+      }
+    }
+  },
+  "provider": {
+    "google": {
+      "project": "{{project}}",
+      "region": "{{region}}"
+    }
+  },
+  "resource": {
+    "google_redis_instance": {
+      "redis": {
+        "name": "{{name}}",
+        "tier": "{{tier}}",
+        "memory_size_gb": {{memory_size_gb}},
+        "region": "{{region}}",
+        "redis_version": "{{version}}",
+        "authorized_network": "{{network}}",
+        "auth_enabled": true,
+        "transit_encryption_mode": "SERVER_AUTHENTICATION"
+      }
+    }
+  },
+  "output": {
+    "host": {
+      "value": "${google_redis_instance.redis.host}"
+    },
+    "port": {
+      "value": "${google_redis_instance.redis.port}"
+    },
+    "url": {
+      "value": "rediss://:${google_redis_instance.redis.auth_string}@${google_redis_instance.redis.host}:${google_redis_instance.redis.port}",
+      "sensitive": true
+    }
+  }
+}

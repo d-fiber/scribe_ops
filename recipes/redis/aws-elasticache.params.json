@@ -1,0 +1,13 @@
+{
+  "region": "eu-west-3",
+  "version": "7.1",
+  "node_type": "cache.t4g.micro",
+  "vpc_id": "vpc-0123456789abcdef0",
+  "subnet_ids": [
+    "subnet-0123456789abcdef0",
+    "subnet-0fedcba9876543210"
+  ],
+  "reachable_from": [
+    "10.0.0.0/16"
+  ]
+}

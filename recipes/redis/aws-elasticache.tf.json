@@ -1,0 +1,84 @@
+{
+  "terraform": {
+    "required_providers": {
+      "aws": {
+        "source": "hashicorp/aws",
+        "version": "6.19.0"
+      },
+      "random": {
+        "source": "hashicorp/random",
+        "version": "3.7.2"
+      }
+    }
+  },
+  "provider": {
+    "aws": {
+      "region": "{{region}}"
+    }
+  },
+  "resource": {
+    "random_password": {
+      "auth": {
+        "length": 32,
+        "special": false
+      }
+    },
+    "aws_elasticache_subnet_group": {
+      "redis": {
+        "name": "{{name}}",
+        "subnet_ids": {{subnet_ids}}
+      }
+    },
+    "aws_security_group": {
+      "redis": {
+        "name": "{{name}}",
+        "vpc_id": "{{vpc_id}}",
+        "ingress": [
+          {
+            "from_port": 6379,
+            "to_port": 6379,
+            "protocol": "tcp",
+            "cidr_blocks": {{reachable_from}},
+            "description": "the stack, and nothing else",
+            "ipv6_cidr_blocks": [],
+            "prefix_list_ids": [],
+            "security_groups": [],
+            "self": false
+          }
+        ],
+        "egress": []
+      }
+    },
+    "aws_elasticache_replication_group": {
+      "redis": {
+        "replication_group_id": "{{name}}",
+        "description": "{{name}}",
+        "engine": "redis",
+        "engine_version": "{{version}}",
+        "node_type": "{{node_type}}",
+        "num_cache_clusters": 1,
+        "port": 6379,
+        "subnet_group_name": "${aws_elasticache_subnet_group.redis.name}",
+        "security_group_ids": [
+          "${aws_security_group.redis.id}"
+        ],
+        "transit_encryption_enabled": true,
+        "auth_token": "${random_password.auth.result}",
+        "automatic_failover_enabled": false,
+        "apply_immediately": true
+      }
+    }
+  },
+  "output": {
+    "host": {
+      "value": "${aws_elasticache_replication_group.redis.primary_endpoint_address}"
+    },
+    "port": {
+      "value": "${aws_elasticache_replication_group.redis.port}"
+    },
+    "url": {
+      "value": "rediss://:${random_password.auth.result}@${aws_elasticache_replication_group.redis.primary_endpoint_address}:${aws_elasticache_replication_group.redis.port}",
+      "sensitive": true
+    }
+  }
+}

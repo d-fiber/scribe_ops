@@ -1,0 +1,8 @@
+{
+  "project": "my-gcp-project",
+  "region": "europe-west1",
+  "tier": "BASIC",
+  "memory_size_gb": 1,
+  "version": "REDIS_7_2",
+  "network": "projects/my-gcp-project/global/networks/default"
+}

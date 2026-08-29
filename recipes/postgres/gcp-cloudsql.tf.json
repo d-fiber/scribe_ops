@@ -1,0 +1,72 @@
+{
+  "terraform": {
+    "required_providers": {
+      "google": {
+        "source": "hashicorp/google",
+        "version": "6.14.1"
+      },
+      "random": {
+        "source": "hashicorp/random",
+        "version": "3.7.2"
+      }
+    }
+  },
+  "provider": {
+    "google": {
+      "project": "{{project}}",
+      "region": "{{region}}"
+    }
+  },
+  "resource": {
+    "random_password": {
+      "master": {
+        "length": 32,
+        "special": false
+      }
+    },
+    "google_sql_database_instance": {
+      "postgres": {
+        "name": "{{name}}",
+        "database_version": "{{version}}",
+        "region": "{{region}}",
+        "root_password": "${random_password.master.result}",
+        "deletion_protection": false,
+        "settings": [
+          {
+            "tier": "{{tier}}",
+            "ip_configuration": [
+              {
+                "ipv4_enabled": true,
+                "authorized_networks": {{reachable_from}}
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "google_sql_database": {
+      "postgres": {
+        "name": "postgres",
+        "instance": "${google_sql_database_instance.postgres.name}"
+      }
+    }
+  },
+  "output": {
+    "host": {
+      "value": "${google_sql_database_instance.postgres.public_ip_address}"
+    },
+    "port": {
+      "value": 5432
+    },
+    "database": {
+      "value": "postgres"
+    },
+    "user": {
+      "value": "postgres"
+    },
+    "password": {
+      "value": "${random_password.master.result}",
+      "sensitive": true
+    }
+  }
+}
