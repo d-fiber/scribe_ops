@@ -34,6 +34,7 @@
 #
 # This header is a summary written for convenience. Where it differs from the
 # LICENSE file, the LICENSE file governs.
+
 SCENARIO=19_deploy
 FIXTURE=minimal
 # shellcheck source=../support/stack.sh
