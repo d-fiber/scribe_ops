@@ -44,6 +44,9 @@ FIXTURE=every-package
 trap teardown EXIT
 prepare_stack
 
+( cd "$WORK" && SCRIBE_STACK_HOME="$OUT/cache" "$TOOLS/out/scribe" forge ) >/dev/null 2>&1 \
+  || fail "forge refused the project the api needs its container config from."
+
 say "starting the cluster, the gateway and the api that answers the gauges"
 # shellcheck disable=SC2086
 docker compose $COMPOSE up -d --build db kong api rest >/dev/null 2>&1 \
