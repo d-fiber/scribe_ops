@@ -54,15 +54,21 @@ for service in db kong api; do
     || fail "$service never turned healthy, it is $(state_of $service)"
 done
 
+app_name=$(grep '^name:' "$WORK/config.yaml" | awk '{ print $2 }' | tr -d '"')
+local_host="codex.$app_name.scribe.localhost"
+
 dashboard=$(grep '^dashboard:' "$WORK/config.yaml" | sed 's/.*"\(.*\)".*/\1/' | sed 's|https\{0,1\}://||')
-[ -n "$dashboard" ] || fail "the fixture names no dashboard, so nothing decides who may read the gauges."
+[ -n "$dashboard" ] || fail "the fixture names no dashboard, and the fixture is meant to carry one."
 
 service_key=$(grep '^SERVICE_KEY=' "$WORK/.env" | cut -d= -f2-)
 anon=$(grep '^ANON_KEY=' "$WORK/.env" | cut -d= -f2-)
 
 answers "the gauges straight from the api, with nothing to prove a role" 401 \
   "http://api:3000/_codex/metrics"
-say "the host answers the surface only to a proved caller, gateway or not"
+
+answers "the gauges straight from the api, with a guessed internal secret" 401 \
+  -H "x-internal-secret: guessed" "http://api:3000/_codex/metrics"
+say "the host answers the surface only to a proved caller, gateway or not, and a wrong secret proves nothing"
 
 answers "the gauges on the public domain" 404 \
   -H "apikey: $service_key" "http://kong:8000/_codex/metrics"
@@ -89,5 +95,15 @@ say "the dashboard domain with an admin key reads the four gauges"
 
 answers "a path the surface does not serve" 404 \
   -H "Host: $dashboard" -H "apikey: $service_key" "http://kong:8000/_codex/nothing-here"
+
+gauges=$(http_body -H "Host: $local_host" -H "apikey: $service_key" \
+  "http://kong:8000/_codex/metrics")
+for gauge in uptimeSeconds inflightBodyBytes residentBytes queues; do
+  case "$gauges" in
+    *"\"$gauge\""*) ;;
+    *) fail "the local dashboard host does not carry $gauge: $gauges" ;;
+  esac
+done
+say "the local dashboard host reads the same four gauges, with no dashboard: needed"
 
 say "green"
