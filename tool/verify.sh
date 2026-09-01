@@ -82,8 +82,10 @@ for fixture in $(cd "$OPS/fixtures" && ls); do
   compose_files=""
   for document in "$stack"/*.yaml; do compose_files="$compose_files -f $document"; done
   # shellcheck disable=SC2086
-  docker compose --project-directory "$work" -p "scribe-ops-$fixture" $compose_files config --quiet 2>/dev/null ||
+  docker compose --project-directory "$work" -p "scribe-ops-$fixture" $compose_files config --quiet 2>"$OUT/$fixture.compose.log" || {
+    cat "$OUT/$fixture.compose.log" >&2
     fail "$fixture: docker compose refuses the rendered stack."
+  }
 
   say "$fixture: the gateway is a document Kong reads"
   python3 - "$stack/services/gateway/kong.yml" <<'PY'
