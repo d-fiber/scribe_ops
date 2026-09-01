@@ -17,7 +17,7 @@ services:
     volumes:
       - "{{service_provision}}/run-provision.sh:/run-provision.sh:ro"
       - "{{service_provision}}/10-roles.sql:/provision/setup/10-roles.sql:ro"
-      - "{{sdk_root}}/packages/foundation/db/init:/provision/foundation:ro"
+      - "{{sdk_root}}/packages/foundation/deploy/db/init:/provision/foundation:ro"
       - "{{project_db_init}}:/provision/project:ro"
     entrypoint: ["/bin/sh", "/run-provision.sh"]
     command:
