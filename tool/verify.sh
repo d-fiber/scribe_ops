@@ -72,7 +72,7 @@ for fixture in $(cd "$OPS/fixtures" && ls); do
     fail "$fixture: the CLI refused to render."
   fi
 
-  stack=$(awk '/^Assembled /{ print $NF }' "$OUT/$fixture.log")
+  stack=$(awk '/^Assembled /{ print $NF }' "$OUT/$fixture.log" | sed 's/\.$//')
   if [ -z "$stack" ]; then
     cat "$OUT/$fixture.log"
     fail "$fixture: the CLI wrote no stack."
@@ -136,7 +136,7 @@ import pathlib, re, sys, yaml
 out, fixture = pathlib.Path(sys.argv[1]), sys.argv[2]
 
 def limits(log):
-    stack = pathlib.Path(re.search(r"^Assembled \S+ in (\S+)$", log.read_text(), re.M).group(1))
+    stack = pathlib.Path(re.search(r"^Assembled \S+ in (.+)\.$", log.read_text(), re.M).group(1))
     document = yaml.safe_load((stack / "resources.yaml").read_text())
     return {n: s["deploy"]["resources"]["limits"] for n, s in document["services"].items()}
 
