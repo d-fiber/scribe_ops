@@ -83,6 +83,9 @@ prepare_stack() {
   cp -R "$OPS/fixtures/$FIXTURE" "$WORK"
   ln -sfn "$FRAMEWORK" "$WORK/scribe"
 
+  ( cd "$WORK" && SCRIBE_STACK_HOME="$OUT/cache" "$TOOLS/out/scribe" forge ) >/dev/null 2>&1 \
+    || fail "forge refused a fixture it had just been given."
+
   render_arguments="--dry-run"
   [ -n "${TARGET:-}" ] && render_arguments="$render_arguments --target $TARGET"
   [ -n "${WORKER:-}" ] && render_arguments="$render_arguments --worker"

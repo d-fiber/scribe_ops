@@ -67,6 +67,11 @@ for fixture in $(cd "$OPS/fixtures" && ls); do
   cp -R "$OPS/fixtures/$fixture" "$work"
   ln -sfn "$FRAMEWORK" "$work/scribe"
 
+  if ! ( cd "$work" && SCRIBE_STACK_HOME="$OUT/cache" "$TOOLS/out/scribe" forge ) > "$OUT/$fixture.forge.log" 2>&1; then
+    cat "$OUT/$fixture.forge.log"
+    fail "$fixture: forge refused a fixture it had just been given."
+  fi
+
   if ! ( cd "$work" && SCRIBE_STACK_HOME="$OUT/cache" "$TOOLS/out/scribe" run --dry-run ) > "$OUT/$fixture.log" 2>&1; then
     cat "$OUT/$fixture.log"
     fail "$fixture: the CLI refused to render."
