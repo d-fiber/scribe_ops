@@ -30,14 +30,15 @@
         "database_version": "{{version}}",
         "region": "{{region}}",
         "root_password": "${random_password.master.result}",
-        "deletion_protection": false,
+        "deletion_protection": true,
         "settings": [
           {
             "tier": "{{tier}}",
             "ip_configuration": [
               {
                 "ipv4_enabled": true,
-                "authorized_networks": {{reachable_from}}
+                "authorized_networks": {{reachable_from}},
+                "ssl_mode": "ENCRYPTED_ONLY"
               }
             ],
             "database_flags": [
