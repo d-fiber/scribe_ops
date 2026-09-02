@@ -1,0 +1,41 @@
+# configuration/main.yaml
+#
+# Written by `scribe forge`. This file holds where this project runs, one
+# block per target, and where the resources of the socle are placed.
+
+targets:
+  local:
+    kind: dev
+    domain: "https://fixture-full.example.com"
+
+  vps:
+    kind: machine
+    domain: "https://fixture-full.example.com"
+    machine:
+      cores: 4
+      threads: 8
+      memory: 8g
+    cpu_cap: true
+
+  big:
+    kind: machine
+    domain: "https://fixture-full.example.com"
+    machine:
+      cores: 16
+      threads: 32
+      memory: 64g
+
+  cramped:
+    kind: machine
+    domain: "https://fixture-full.example.com"
+    machine:
+      cores: 4
+      threads: 8
+      memory: 4g
+    cpu_cap: true
+
+# Where each resource of the socle is placed, per target. A target that is
+# not named here gets a container alongside the rest of the stack.
+#
+# The socle needs these, always, on every project: postgres, redis, nats, rest.
+deploy: {}

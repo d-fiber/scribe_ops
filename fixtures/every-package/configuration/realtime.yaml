@@ -1,0 +1,17 @@
+# configuration/realtime.yaml
+#
+# Written by `scribe forge` from the realtime 1.0.0
+# declaration. Values are the package defaults, and this file is yours to
+# edit: `scribe forge` never overwrites it.
+
+# The largest number of concurrent WebSocket connections realtime accepts.
+max_connections: 100
+
+# How many acceptor processes realtime keeps ready for an incoming connection.
+num_acceptors: 10
+
+# Where each resource this package needs is placed, per target. A target
+# that is not named here gets a container alongside the rest of the stack.
+#
+# This package needs none, so this block stays empty.
+deploy: {}

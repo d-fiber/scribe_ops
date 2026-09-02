@@ -1,0 +1,11 @@
+# configuration/search.yaml
+#
+# Written by `scribe forge` from the search 1.0.0
+# declaration. Values are the package defaults, and this file is yours to
+# edit: `scribe forge` never overwrites it.
+
+# Where each resource this package needs is placed, per target. A target
+# that is not named here gets a container alongside the rest of the stack.
+#
+# The resources to name here are: index.
+deploy: {}
