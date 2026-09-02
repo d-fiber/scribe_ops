@@ -1,6 +1,7 @@
 requires:
   - name: postgres
     type: postgres
+    capabilities: [pg_cron, pgcrypto, create_role]
   - name: redis
     type: redis
   - name: nats

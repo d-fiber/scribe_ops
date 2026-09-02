@@ -49,6 +49,24 @@
         "egress": []
       }
     },
+    "aws_db_parameter_group": {
+      "postgres": {
+        "name": "{{name}}",
+        "family": "{{parameter_group_family}}",
+        "parameter": [
+          {
+            "name": "shared_preload_libraries",
+            "value": "pg_cron",
+            "apply_method": "pending-reboot"
+          },
+          {
+            "name": "cron.database_name",
+            "value": "postgres",
+            "apply_method": "pending-reboot"
+          }
+        ]
+      }
+    },
     "aws_db_instance": {
       "postgres": {
         "identifier": "{{name}}",
@@ -64,6 +82,7 @@
         "vpc_security_group_ids": [
           "${aws_security_group.postgres.id}"
         ],
+        "parameter_group_name": "${aws_db_parameter_group.postgres.name}",
         "backup_retention_period": 7,
         "skip_final_snapshot": true,
         "apply_immediately": true

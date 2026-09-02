@@ -1,6 +1,7 @@
 {
   "region": "eu-west-3",
   "version": "16.4",
+  "parameter_group_family": "postgres16",
   "instance_class": "db.t4g.micro",
   "vpc_id": "vpc-0123456789abcdef0",
   "subnet_ids": [

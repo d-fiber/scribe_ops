@@ -1,0 +1,4 @@
+provides:
+  - pg_cron
+  - pgcrypto
+  - create_role

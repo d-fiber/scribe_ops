@@ -39,6 +39,12 @@
                 "ipv4_enabled": true,
                 "authorized_networks": {{reachable_from}}
               }
+            ],
+            "database_flags": [
+              {
+                "name": "cloudsql.enable_pg_cron",
+                "value": "on"
+              }
             ]
           }
         ]

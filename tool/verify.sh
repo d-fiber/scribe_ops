@@ -167,7 +167,7 @@ broken = False
 for contract in sorted(root.glob("*/contract.yaml")):
     promised = set(yaml.safe_load(contract.read_text())["outputs"])
     for recipe in sorted(contract.parent.iterdir()):
-        if recipe.name == "contract.yaml" or recipe.name.endswith(".params.json"):
+        if recipe.name == "contract.yaml" or recipe.name.endswith(".params.json") or recipe.name.endswith(".capabilities.yaml"):
             continue
         machine = recipe.name.endswith(".tf.json")
         text = fill(recipe.read_text(), params_of(recipe))
