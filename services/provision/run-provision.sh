@@ -79,9 +79,21 @@ play() {
   done
 }
 
+play_package() {
+  dir=$1
+  schema=$2
+  [ -e "$dir" ] || return 0
+  run -c "CREATE SCHEMA IF NOT EXISTS \"$schema\""
+  run -c "GRANT USAGE ON SCHEMA \"$schema\" TO anon, authenticated, service_role"
+  play "$dir"
+}
+
 play /provision/setup
-play /provision/foundation
-play /provision/modules
+play_package /provision/foundation foundation
+for package_dir in /provision/modules/*/; do
+  [ -d "$package_dir" ] || continue
+  play_package "$package_dir" "$(basename "$package_dir")"
+done
 play /provision/project
 
 echo "[provision] the database carries the roles and the schema the stack expects"
