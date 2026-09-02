@@ -70,7 +70,7 @@ while read -r _local_ref local_sha _remote_ref remote_sha; do
 done
 
 if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
-  step "every fixture renders and every tool reads what comes out" bash tool/verify.sh
+  step "every fixture renders and every tool reads what comes out" bash verify/tool/verify.sh
 else
   echo "skipped  the render (docker is not running, and every check here is a real tool)"
 fi

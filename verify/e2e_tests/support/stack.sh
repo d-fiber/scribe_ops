@@ -37,10 +37,11 @@
 
 set -eu
 
-OPS=$(cd "$(dirname "$0")/../.." && pwd)
+HERE=$(cd "$(dirname "$0")/../.." && pwd)
+OPS=$(cd "$HERE/.." && pwd)
 FRAMEWORK=${FRAMEWORK:-$OPS/../scribe}
 TOOLS=${TOOLS:-$OPS/../scribe_tools}
-OUT=$OPS/.e2e
+OUT=$HERE/.e2e
 FIXTURE=${FIXTURE:-minimal}
 
 say() { echo "[$SCENARIO] $1"; }
@@ -69,7 +70,7 @@ stale_cli() {
 
 build_cli() {
   say "building the CLI against the current templates"
-  bash "$OPS/tool/lay.sh" "$TOOLS"
+  bash "$HERE/tool/lay.sh" "$TOOLS"
   ( cd "$TOOLS" && dart pub get >/dev/null && mkdir -p out && dart compile exe bin/scribe.dart -o out/scribe >/dev/null )
   rm -rf "$TOOLS/out/templates" && cp -R "$TOOLS/templates" "$TOOLS/out/templates"
 }
@@ -80,7 +81,7 @@ prepare_stack() {
 
   mkdir -p "$OUT"
   rm -rf "$WORK"
-  cp -R "$OPS/fixtures/$FIXTURE" "$WORK"
+  cp -R "$HERE/fixtures/$FIXTURE" "$WORK"
   ln -sfn "$FRAMEWORK" "$WORK/scribe"
 
   ( cd "$WORK" && SCRIBE_STACK_HOME="$OUT/cache" "$TOOLS/out/scribe" forge ) >/dev/null 2>&1 \

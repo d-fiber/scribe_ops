@@ -54,7 +54,7 @@ jobs:
 
       - name: Let OpenTofu judge every recipe
         working-directory: scribe_ops
-        run: bash tool/recipes.sh
+        run: bash verify/tool/recipes.sh
 
   e2e-light:
     strategy:
@@ -98,7 +98,7 @@ jobs:
 
       - name: Run ${{ matrix.scenario }} against a real daemon
         working-directory: scribe_ops
-        run: bash "e2e_tests/${{ matrix.scenario }}/scenario.sh"
+        run: bash "verify/e2e_tests/${{ matrix.scenario }}/scenario.sh"
 
   e2e-heavy:
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
@@ -168,7 +168,7 @@ jobs:
 
           for scenario in $SCENARIOS; do
             echo "::group::$scenario"
-            bash "e2e_tests/$scenario/scenario.sh" || failed="$failed $scenario"
+            bash "verify/e2e_tests/$scenario/scenario.sh" || failed="$failed $scenario"
             echo "::endgroup::"
 
             docker system prune --force --volumes >/dev/null

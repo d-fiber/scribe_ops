@@ -55,7 +55,7 @@ stale_cli && build_cli
 
 mkdir -p "$OUT"
 rm -rf "$WORK"
-cp -R "$OPS/fixtures/$FIXTURE" "$WORK"
+cp -R "$HERE/fixtures/$FIXTURE" "$WORK"
 ln -sfn "$FRAMEWORK" "$WORK/scribe"
 sed -i.bak "s|^name: .*|name: $PROJECT|" "$WORK/config.yaml" && rm -f "$WORK/config.yaml.bak"
 rm -rf "$WORK/configuration"

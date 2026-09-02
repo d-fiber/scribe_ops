@@ -61,7 +61,7 @@ jobs:
 
       - name: Render every fixture and read what comes out
         working-directory: scribe_ops
-        run: bash tool/verify.sh
+        run: bash verify/tool/verify.sh
 
 
   tag:

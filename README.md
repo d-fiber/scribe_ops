@@ -4,11 +4,13 @@ The templates a scribe stack is assembled from: the compose, the gateway, the pr
 Dockerfiles and the SQL a cluster runs before it accepts a connection.
 
 ```
-db/          roles.sql  jwt.sql
-docker/      docker-compose.yaml  Dockerfile.api  Dockerfile.functions
-             capacity.yaml  replicas.yaml  resources.yaml  tuning.yaml
-gateway/     kong.yml  kong-entrypoint.sh
-proxy/       Caddyfile
+stack.yaml           the top-level compose keys every rendered document merges
+configuration.yaml   the resources the socle itself needs
+recipes/              a directory per resource type, a file per class
+env/                  a directory per environment audience
+services/             a directory per service, one project's worth
+machine/router/       the router shared by every project on a machine, not per-project
+verify/               the suite that renders a fixture and reads what comes out
 ```
 
 They live here rather than in the CLI so that the tool that reads each of them can be pointed at
@@ -19,7 +21,7 @@ validate` and `psql`. Here they carry the name the reader expects.
 ## Running the suite
 
 ```
-bash tool/verify.sh
+bash verify/tool/verify.sh
 ```
 
 It expects a checkout of the framework and one of the CLI beside this one, and takes `FRAMEWORK`
@@ -28,10 +30,10 @@ real output.
 
 ## What a change costs
 
-Four of the twelve files carry `{{placeholders}}`, and four of those placeholders are blocks the
-CLI builds from the nodes a project declares. Nothing here can be checked as it is written, so the
-suite renders a fixture first, with the CLI that renders it in production, and reads what comes
-out. There is no second renderer in this repository, on purpose.
+Several files carry `{{placeholders}}`, and some of those placeholders are blocks the CLI builds
+from the nodes a project declares. Nothing here can be checked as it is written, so the suite
+renders a fixture first, with the CLI that renders it in production, and reads what comes out.
+There is no second renderer in this repository, on purpose.
 
 ## How it reaches the CLI
 

@@ -42,9 +42,10 @@ SCOPE="recipes"
 say() { echo "[$SCOPE] $1"; }
 fail() { echo "[$SCOPE] $1" >&2; exit 1; }
 
-OPS=$(cd "$(dirname "$0")/.." && pwd)
+HERE=$(cd "$(dirname "$0")/.." && pwd)
+OPS=$(cd "$HERE/.." && pwd)
 FRAMEWORK=${FRAMEWORK:-$OPS/../scribe}
-OUT=$OPS/.rendered/tofu
+OUT=$HERE/.rendered/tofu
 
 command -v tofu >/dev/null || fail "OpenTofu is not installed. Run scribe doctor."
 
@@ -58,7 +59,7 @@ judge() {
   recipe=$3
 
   mkdir -p "$room"
-  python3 "$OPS/tool/fill.py" "$recipe" > "$room/main.tf.json"
+  python3 "$HERE/tool/fill.py" "$recipe" > "$room/main.tf.json"
 
   (cd "$room" && tofu init -backend=false -input=false >/dev/null && tofu validate >/dev/null) ||
     fail "OpenTofu refuses $named. Run tofu validate in $room to read why."

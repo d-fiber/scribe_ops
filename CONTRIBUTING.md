@@ -37,7 +37,7 @@ one of them fails, so a red run costs you twelve seconds instead of a round trip
 By hand, the same three:
 
 ```
-bash tool/verify.sh
+bash verify/tool/verify.sh
 bash .github/headers/check.sh
 bash .github/commits/check.sh origin/dev HEAD
 ```

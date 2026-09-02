@@ -102,7 +102,7 @@ stale_cli && build_cli
 
 mkdir -p "$OUT"
 rm -rf "$WORK"
-cp -R "$OPS/fixtures/$FIXTURE" "$WORK"
+cp -R "$HERE/fixtures/$FIXTURE" "$WORK"
 mkdir -p "$WORK/scribe"
 for tree in alchemy engine packages protocol sdk deno.json deno.lock; do
   [ -e "$FRAMEWORK/$tree" ] && cp -RL "$FRAMEWORK/$tree" "$WORK/scribe/$tree"

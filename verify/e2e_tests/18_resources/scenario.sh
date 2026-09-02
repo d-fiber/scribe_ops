@@ -59,7 +59,7 @@ prepare_outside() {
 
   mkdir -p "$OUT"
   rm -rf "$WORK"
-  cp -R "$OPS/fixtures/$FIXTURE" "$WORK"
+  cp -R "$HERE/fixtures/$FIXTURE" "$WORK"
   ln -sfn "$FRAMEWORK" "$WORK/scribe"
 
   mkdir -p "$WORK/configuration"

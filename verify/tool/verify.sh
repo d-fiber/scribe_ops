@@ -42,16 +42,17 @@ SCOPE="verify"
 say() { echo "[$SCOPE] $1"; }
 fail() { echo "[$SCOPE] $1" >&2; exit 1; }
 
-OPS=$(cd "$(dirname "$0")/.." && pwd)
+HERE=$(cd "$(dirname "$0")/.." && pwd)
+OPS=$(cd "$HERE/.." && pwd)
 FRAMEWORK=${FRAMEWORK:-$OPS/../scribe}
 TOOLS=${TOOLS:-$OPS/../scribe_tools}
-OUT=$OPS/.rendered
+OUT=$HERE/.rendered
 
 [ -d "$FRAMEWORK" ] || fail "No framework checkout at $FRAMEWORK. Set FRAMEWORK to one."
 [ -d "$TOOLS" ] || fail "No CLI checkout at $TOOLS. Set TOOLS to one."
 
 say "laying the templates into the CLI, adding the suffix back"
-bash "$OPS/tool/lay.sh" "$TOOLS"
+bash "$HERE/tool/lay.sh" "$TOOLS"
 
 say "building the CLI that renders them"
 ( cd "$TOOLS" && dart pub get >/dev/null && mkdir -p out && dart compile exe bin/scribe.dart -o out/scribe >/dev/null )
@@ -61,10 +62,10 @@ cp -R "$TOOLS/templates" "$TOOLS/out/templates"
 rm -rf "$OUT"
 mkdir -p "$OUT"
 
-for fixture in $(cd "$OPS/fixtures" && ls); do
+for fixture in $(cd "$HERE/fixtures" && ls); do
   say "rendering $fixture"
   work=$OUT/$fixture
-  cp -R "$OPS/fixtures/$fixture" "$work"
+  cp -R "$HERE/fixtures/$fixture" "$work"
   ln -sfn "$FRAMEWORK" "$work/scribe"
 
   if ! ( cd "$work" && SCRIBE_STACK_HOME="$OUT/cache" "$TOOLS/out/scribe" forge ) > "$OUT/$fixture.forge.log" 2>&1; then
@@ -164,8 +165,8 @@ say "every recipe answers the contract of its type"
 python3 - "$OPS/recipes" <<'CONTRACT' || fail "a recipe does not answer its contract."
 import json, pathlib, sys, yaml
 
-sys.path.insert(0, "tool")
-from fill import fill, params_of
+sys.path.insert(0, "verify/tool")
+from fill import filled
 
 root = pathlib.Path(sys.argv[1])
 broken = False
@@ -175,7 +176,7 @@ for contract in sorted(root.glob("*/contract.yaml")):
         if recipe.name == "contract.yaml" or recipe.name.endswith(".params.json") or recipe.name.endswith(".capabilities.yaml"):
             continue
         machine = recipe.name.endswith(".tf.json")
-        text = fill(recipe.read_text(), params_of(recipe))
+        text = filled(recipe)
         document = json.loads(text) if machine else yaml.safe_load(text)
         answered = set(document["output" if machine else "outputs"])
         missing = promised - answered

@@ -47,7 +47,7 @@ jobs:
       - name: Lay the templates in, adding the suffix back
         run: |
           set -eu
-          bash scribe_ops/tool/lay.sh "$GITHUB_WORKSPACE/scribe_tools"
+          bash scribe_ops/verify/tool/lay.sh "$GITHUB_WORKSPACE/scribe_tools"
 
       - name: Push what changed, or say that nothing did
         working-directory: scribe_tools

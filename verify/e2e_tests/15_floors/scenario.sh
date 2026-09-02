@@ -47,7 +47,7 @@ trap teardown EXIT
 stale_cli && build_cli
 mkdir -p "$OUT"
 rm -rf "$OUT/$FIXTURE"
-cp -R "$OPS/fixtures/$FIXTURE" "$OUT/$FIXTURE"
+cp -R "$HERE/fixtures/$FIXTURE" "$OUT/$FIXTURE"
 ln -sfn "$FRAMEWORK" "$OUT/$FIXTURE/scribe"
 
 refusal=$( cd "$OUT/$FIXTURE" && SCRIBE_STACK_HOME="$OUT/cache" "$TOOLS/out/scribe" run --dry-run --target cramped 2>&1 || true )

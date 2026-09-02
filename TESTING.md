@@ -5,9 +5,9 @@
 Two workflows read this repository. `ci.yml` renders the fixtures without starting anything, and
 `e2e.yml` starts a real stack.
 
-`tool/verify.sh` is the render check, and it is the `verify` job of `ci.yml`. It lays the templates
-into a checkout of the CLI with the `.tmpl` suffix added back, builds the binary from it, and
-renders every fixture under `fixtures/`. Then, per fixture:
+`verify/tool/verify.sh` is the render check, and it is the `verify` job of `ci.yml`. It lays the
+templates into a checkout of the CLI with the `.tmpl` suffix added back, builds the binary from it,
+and renders every fixture under `verify/fixtures/`. Then, per fixture:
 
 | Check | What it catches |
 | --- | --- |
@@ -19,7 +19,7 @@ renders every fixture under `fixtures/`. Then, per fixture:
 
 `shellcheck` reads the gateway entrypoint when it is installed, and says so when it is not.
 
-`e2e.yml` runs the thirteen scenarios under `e2e_tests/`, each of which renders a fixture and then
+`e2e.yml` runs the scenarios under `verify/e2e_tests/`, each of which renders a fixture and then
 starts services against the daemon of the runner. It splits them by what they cost.
 
 | Job | Scenarios | When |
@@ -37,8 +37,8 @@ The eleven scenarios that are not `00` and `01` are not executable files, so the
 `bash` and not by their own path. That is what the workflow does, and what the line below does.
 
 ```
-bash e2e_tests/01_database/scenario.sh
-KEEP=1 bash e2e_tests/03_stack/scenario.sh
+bash verify/e2e_tests/01_database/scenario.sh
+KEEP=1 bash verify/e2e_tests/03_stack/scenario.sh
 ```
 
 `KEEP` leaves the stack up when the scenario ends, which is the only way to look at a failure from
@@ -136,7 +136,7 @@ way round.
 It is the ordering the framework already lives by, now running in both directions: the CLI reads
 this repository's templates, and this repository renders with the CLI.
 
-What the render check writes lands in `.rendered/` and what a scenario writes lands in `.e2e/`,
-both of which are ignored. Nothing is written into either of the neighbouring checkouts except
-`templates/deploy/` and `out/`, which the run replaces and which the CLI repository is expected to
-hold as a copy anyway.
+What the render check writes lands in `verify/.rendered/` and what a scenario writes lands in
+`verify/.e2e/`, both of which are ignored. Nothing is written into either of the neighbouring
+checkouts except `templates/deploy/` and `out/`, which the run replaces and which the CLI
+repository is expected to hold as a copy anyway.

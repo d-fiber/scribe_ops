@@ -1,6 +1,6 @@
 .DS_Store
 /.env
 
-/.rendered/
-/.e2e/
-/tool/__pycache__/
+/verify/.rendered/
+/verify/.e2e/
+/verify/tool/__pycache__/

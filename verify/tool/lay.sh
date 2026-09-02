@@ -37,11 +37,12 @@
 
 set -eu
 
-OPS=$(cd "$(dirname "$0")/.." && pwd)
+OPS=$(cd "$(dirname "$0")/../.." && pwd)
 TOOLS=${1:?usage: lay.sh <path to the scribe_tools checkout>}
 
 rm -rf "$TOOLS/templates/deploy"
-for file in $(cd "$OPS" && find services env router recipes stack.yaml configuration.yaml -type f | sort); do
-  mkdir -p "$TOOLS/templates/deploy/$(dirname "$file")"
-  cp "$OPS/$file" "$TOOLS/templates/deploy/$file.tmpl"
+for file in $(cd "$OPS" && find services env machine/router recipes stack.yaml configuration.yaml -type f | sort); do
+  destination=${file#machine/}
+  mkdir -p "$TOOLS/templates/deploy/$(dirname "$destination")"
+  cp "$OPS/$file" "$TOOLS/templates/deploy/$destination.tmpl"
 done
