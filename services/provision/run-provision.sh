@@ -61,8 +61,10 @@ done
 run -c 'CREATE TABLE IF NOT EXISTS scribe_provisioning (file text PRIMARY KEY, ran_at timestamptz NOT NULL DEFAULT now())'
 
 already() {
-  [ "$(run -tAc "SELECT count(*) FROM scribe_provisioning WHERE file = '$1'")" != "0" ]
+  [ "$(run -v name="$1" -tAf - <<< "SELECT count(*) FROM scribe_provisioning WHERE file = :'name'")" != "0" ]
 }
+
+track() { echo "INSERT INTO scribe_provisioning (file) VALUES (:'name')"; }
 
 play() {
   [ -e "$1" ] || return 0
@@ -73,8 +75,7 @@ play() {
       continue
     fi
     echo "[provision] running $name"
-    run -f "$file"
-    run -c "INSERT INTO scribe_provisioning (file) VALUES ('$name')"
+    run -1 -v name="$name" -f "$file" -f <(track)
   done
 }
 
