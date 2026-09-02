@@ -30,6 +30,15 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          path: scribe_ops
+
+      - name: Check out the framework, for the recipes its packages carry
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          repository: d-fiber/scribe
+          ref: dev
+          path: scribe
 
       - uses: opentofu/setup-opentofu@592200bd4b9bbf4772ace78f887668b1aee8f716 # v1.0.5
         with:
@@ -40,10 +49,11 @@ jobs:
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: ~/.terraform.d/plugin-cache
-          key: tofu-providers-${{ hashFiles('recipes/*/*.tf.json') }}
+          key: tofu-providers-${{ hashFiles('scribe_ops/recipes/*/*.tf.json', 'scribe/packages/*/deploy/recipes/*/*.tf.json') }}
           restore-keys: tofu-providers-
 
       - name: Let OpenTofu judge every recipe
+        working-directory: scribe_ops
         run: bash tool/recipes.sh
 
   e2e-light:

@@ -43,6 +43,7 @@ say() { echo "[$SCOPE] $1"; }
 fail() { echo "[$SCOPE] $1" >&2; exit 1; }
 
 OPS=$(cd "$(dirname "$0")/.." && pwd)
+FRAMEWORK=${FRAMEWORK:-$OPS/../scribe}
 OUT=$OPS/.rendered/tofu
 
 command -v tofu >/dev/null || fail "OpenTofu is not installed. Run scribe doctor."
@@ -51,11 +52,10 @@ TF_PLUGIN_CACHE_DIR=${TF_PLUGIN_CACHE_DIR:-$HOME/.terraform.d/plugin-cache}
 export TF_PLUGIN_CACHE_DIR
 mkdir -p "$TF_PLUGIN_CACHE_DIR"
 
-say "every recipe OpenTofu applies is one it accepts"
-
-for recipe in "$OPS"/recipes/*/*.tf.json; do
-  named="$(basename "$(dirname "$recipe")")/$(basename "$recipe")"
-  room="$OUT/$(basename "$(dirname "$recipe")")-$(basename "$recipe" .tf.json)"
+judge() {
+  named=$1
+  room=$2
+  recipe=$3
 
   mkdir -p "$room"
   python3 "$OPS/tool/fill.py" "$recipe" > "$room/main.tf.json"
@@ -64,6 +64,27 @@ for recipe in "$OPS"/recipes/*/*.tf.json; do
     fail "OpenTofu refuses $named. Run tofu validate in $room to read why."
 
   say "  $named is valid, and its params.json says what a project writes"
+}
+
+say "every recipe OpenTofu applies is one it accepts"
+
+for recipe in "$OPS"/recipes/*/*.tf.json; do
+  judge "$(basename "$(dirname "$recipe")")/$(basename "$recipe")" \
+    "$OUT/$(basename "$(dirname "$recipe")")-$(basename "$recipe" .tf.json)" \
+    "$recipe"
 done
+
+if [ -d "$FRAMEWORK/packages" ]; then
+  for recipe in "$FRAMEWORK"/packages/*/deploy/recipes/*/*.tf.json; do
+    [ -e "$recipe" ] || continue
+    package=$(basename "$(dirname "$(dirname "$(dirname "$(dirname "$recipe")")")")")
+    type=$(basename "$(dirname "$recipe")")
+    judge "$package/$type/$(basename "$recipe")" \
+      "$OUT/$package-$type-$(basename "$recipe" .tf.json)" \
+      "$recipe"
+  done
+else
+  say "no framework checkout at $FRAMEWORK, so no package recipe was judged"
+fi
 
 say "every recipe a provider would apply is one it accepts."
