@@ -74,6 +74,10 @@
     "password": {
       "value": "${random_password.master.result}",
       "sensitive": true
+    },
+    "url": {
+      "value": "postgresql://postgres:${random_password.master.result}@${google_sql_database_instance.postgres.public_ip_address}:5432/postgres",
+      "sensitive": true
     }
   }
 }

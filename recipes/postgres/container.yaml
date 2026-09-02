@@ -7,3 +7,4 @@ outputs:
   database: "postgres"
   user: "supabase_admin"
   password: "${POSTGRES_PASSWORD}"
+  url: "postgresql://supabase_admin:${POSTGRES_PASSWORD}@db:5432/postgres"

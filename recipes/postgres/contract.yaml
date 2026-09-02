@@ -4,3 +4,4 @@ outputs:
   - database
   - user
   - password
+  - url

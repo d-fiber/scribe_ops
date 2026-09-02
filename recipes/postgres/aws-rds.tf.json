@@ -106,6 +106,10 @@
     "password": {
       "value": "${random_password.master.result}",
       "sensitive": true
+    },
+    "url": {
+      "value": "postgresql://scribe_admin:${random_password.master.result}@${aws_db_instance.postgres.address}:${aws_db_instance.postgres.port}/postgres",
+      "sensitive": true
     }
   }
 }
