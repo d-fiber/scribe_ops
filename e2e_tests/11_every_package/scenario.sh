@@ -73,6 +73,15 @@ exited=$(exit_code_of db-migrate)
 [ "$exited" = "0" ] || fail "the migration container left with $exited under the full selection."
 say "the migration ran through every package's schema and left with 0"
 
+for pair in auth:__accounts__ search:__search_indices__ dynamic_links:__dynamic_links__ \
+  remote_configs:__remote_configs__ audience:__audiences__; do
+  pkg=${pair%%:*}
+  table=${pair##*:}
+  found=$(query_db "select count(*) from information_schema.tables where table_name = '$table'")
+  [ "$found" = "1" ] || fail "$pkg is mounted and $table was never created."
+done
+say "every mounted package's schema reached the database, one table each"
+
 say "raising the two profiles a project has to ask for, this pulls opensearch"
 # shellcheck disable=SC2086
 docker compose $COMPOSE --profile realtime --profile search up -d --build >/dev/null 2>&1 \
