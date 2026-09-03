@@ -1,0 +1,5 @@
+outputs:
+  driver: "nats"
+  url: "${NATS_URL}"
+  region: ""
+  project_id: ""

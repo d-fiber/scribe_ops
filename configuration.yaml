@@ -4,5 +4,5 @@ requires:
     capabilities: [pg_cron, pgcrypto, create_role]
   - name: redis
     type: redis
-  - name: nats
-    type: nats
+  - name: queue
+    type: queue

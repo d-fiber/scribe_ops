@@ -1,4 +1,0 @@
-outputs:
-  host: "${NATS_HOST}"
-  port: "${NATS_PORT:-4222}"
-  url: "${NATS_URL}"

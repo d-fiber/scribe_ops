@@ -1,0 +1,5 @@
+outputs:
+  - driver
+  - url
+  - region
+  - project_id

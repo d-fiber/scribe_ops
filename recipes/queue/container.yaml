@@ -2,6 +2,7 @@ brings:
   - nats
 
 outputs:
-  host: "nats"
-  port: "4222"
+  driver: "nats"
   url: "nats://${NATS_PASSWORD}@nats:4222"
+  region: ""
+  project_id: ""
