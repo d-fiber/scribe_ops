@@ -3,3 +3,5 @@ outputs:
   url: "${NATS_URL}"
   region: ""
   project_id: ""
+  instance_profile_name: ""
+  service_account_email: ""

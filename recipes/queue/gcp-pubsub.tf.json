@@ -1,0 +1,50 @@
+{
+  "terraform": {
+    "required_providers": {
+      "google": {
+        "source": "hashicorp/google",
+        "version": "6.14.1"
+      }
+    }
+  },
+  "provider": {
+    "google": {
+      "project": "{{project}}"
+    }
+  },
+  "resource": {
+    "google_service_account": {
+      "queue": {
+        "account_id": "sa-{{name}}",
+        "display_name": "{{name}}"
+      }
+    },
+    "google_project_iam_member": {
+      "queue": {
+        "project": "{{project}}",
+        "role": "roles/pubsub.editor",
+        "member": "serviceAccount:${google_service_account.queue.email}"
+      }
+    }
+  },
+  "output": {
+    "driver": {
+      "value": "pubsub"
+    },
+    "url": {
+      "value": ""
+    },
+    "region": {
+      "value": ""
+    },
+    "project_id": {
+      "value": "{{project}}"
+    },
+    "instance_profile_name": {
+      "value": ""
+    },
+    "service_account_email": {
+      "value": "${google_service_account.queue.email}"
+    }
+  }
+}
