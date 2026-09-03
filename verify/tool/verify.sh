@@ -172,8 +172,12 @@ root = pathlib.Path(sys.argv[1])
 broken = False
 for contract in sorted(root.glob("*/contract.yaml")):
     promised = set(yaml.safe_load(contract.read_text())["outputs"])
-    for recipe in sorted(contract.parent.iterdir()):
+    for recipe in sorted(contract.parent.rglob("*")):
+        if not recipe.is_file():
+            continue
         if recipe.name == "contract.yaml" or recipe.name.endswith(".params.json") or recipe.name.endswith(".capabilities.yaml"):
+            continue
+        if not (recipe.name.endswith(".tf.json") or recipe.name in {"container.yaml", "external.yaml"}):
             continue
         machine = recipe.name.endswith(".tf.json")
         text = filled(recipe)

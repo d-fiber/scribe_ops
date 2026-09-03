@@ -36,6 +36,7 @@
 # LICENSE file, the LICENSE file governs.
 
 set -eu
+shopt -s globstar nullglob
 
 SCOPE="recipes"
 
@@ -69,18 +70,22 @@ judge() {
 
 say "every recipe OpenTofu applies is one it accepts"
 
-for recipe in "$OPS"/recipes/*/*.tf.json; do
-  judge "$(basename "$(dirname "$recipe")")/$(basename "$recipe")" \
-    "$OUT/$(basename "$(dirname "$recipe")")-$(basename "$recipe" .tf.json)" \
+for recipe in "$OPS"/recipes/**/*.tf.json; do
+  rel=${recipe#"$OPS"/recipes/}
+  type=${rel%%/*}
+  judge "$rel" \
+    "$OUT/$type-$(basename "$recipe" .tf.json)" \
     "$recipe"
 done
 
 if [ -d "$FRAMEWORK/packages" ]; then
-  for recipe in "$FRAMEWORK"/packages/*/deploy/recipes/*/*.tf.json; do
+  for recipe in "$FRAMEWORK"/packages/*/deploy/recipes/**/*.tf.json; do
     [ -e "$recipe" ] || continue
-    package=$(basename "$(dirname "$(dirname "$(dirname "$(dirname "$recipe")")")")")
-    type=$(basename "$(dirname "$recipe")")
-    judge "$package/$type/$(basename "$recipe")" \
+    rel=${recipe#"$FRAMEWORK"/packages/}
+    package=${rel%%/*}
+    after_recipes=${rel#*/deploy/recipes/}
+    type=${after_recipes%%/*}
+    judge "$package/$after_recipes" \
       "$OUT/$package-$type-$(basename "$recipe" .tf.json)" \
       "$recipe"
   done
