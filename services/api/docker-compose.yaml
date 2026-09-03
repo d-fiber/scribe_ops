@@ -11,15 +11,14 @@ services:
       {{build_platform}}
     image: "{{image_api}}"
     restart: "unless-stopped"
-    user: "deno"
+    user: "{{user_api}}"
     security_opt: ["no-new-privileges:true"]
     cap_drop: ["ALL"]
     ulimits:
       nofile:
         soft: 8192
         hard: 16384
-    volumes:
-{{source_mounts_api}}      - "deno-cache:/deno-dir"
+{{volumes_api}}
     environment:
       PORT: "3000"
       APP_NAME: "{{app_name}}"
@@ -36,17 +35,7 @@ services:
       - path: "{{stack_env}}/project.env"
         required: false
     command:
-      - "run"
-      - "--v8-flags=--max-old-space-size={{api_max_old_space}}"
-      - "--allow-net"
-      - "--allow-env"
-      - "--allow-read=/app,/deno-dir"
-      - "--allow-sys=osRelease,osUptime,hostname"
-      - "--allow-run=ffmpeg"
-      - "--allow-write=/tmp"
-      - "--config"
-      - "/app/{{alchemy_dir}}/sdk/js/scribe.container.json"
-      - "/app/scribe/engine/shell/platform/server/main.ts"
+{{runtime_command_api}}
     depends_on:
       db:
         condition: "service_healthy"
