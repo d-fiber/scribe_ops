@@ -42,6 +42,8 @@ services:
         condition: "service_completed_successfully"
       nats:
         condition: "service_healthy"
+      init:
+        condition: "service_completed_successfully"
     healthcheck:
       test:
         [

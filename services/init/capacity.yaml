@@ -1,0 +1,6 @@
+services:
+- name: init
+  weight: 60
+  runtime: oneshot
+  min: 256Mi
+  dev: 512Mi

@@ -1,0 +1,9 @@
+name: "{{app_name_snake}}"
+
+services:
+  init:
+    deploy:
+      resources:
+        limits:
+          memory: "{{init_mem_limit}}"{{init_cpu_ceiling}}
+          pids: 512
